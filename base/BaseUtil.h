@@ -14,7 +14,7 @@
 #include "ThreadPool.h"
 
 #define NOTUSED_ARG(v) ((void)v)		// used this to remove warning C4100, unreferenced parameter
-#define ASSERT_ABORT(c) if(!(c)) abort();
+#define ASSERT_ABORT(c) if(!(c)) exit(-1);
 
 extern AsyncLogging g_baselog;
 
