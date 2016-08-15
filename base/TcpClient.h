@@ -28,6 +28,7 @@ public:
     void addClient(const ConnInfo & ci);
     void delClient(const ConnInfo & ci);
 
+    BaseConnPtr getConn(const ConnInfo & ci);
     BaseConnPtr getNextConn();
 
     size_t size() { return _connList.size(); }

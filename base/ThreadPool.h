@@ -22,10 +22,10 @@ public:
             std::unique_lock<std::mutex> lock(_mutex);
             assert(!_stop);
             _tasks.emplace(std::move(task));
+            _condition.notify_one();
         }
 
         //LOG_INFO("begin notify:%p", this);
-        _condition.notify_one();
     }
 
     size_t pending()
@@ -79,9 +79,8 @@ inline ThreadPool::~ThreadPool()
     {
         std::unique_lock<std::mutex> lock(_mutex);
         _stop = true;
-
+        _condition.notify_all();
     }
-    _condition.notify_all();
 
     for(std::thread &worker: _workers)
         worker.join();

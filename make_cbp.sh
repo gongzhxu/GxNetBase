@@ -23,7 +23,7 @@ make_cbp(){
 }
 
 case $1 in
-	base|daemon)
+	base|daemon|hiredis-vip|hiredis-test)
 		make_cbp $1
 		;;
 	all)

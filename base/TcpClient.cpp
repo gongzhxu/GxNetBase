@@ -32,6 +32,11 @@ void TcpClient::delClient(const ConnInfo & ci)
     _loop->runInLoop(std::bind(&TcpClient::delClientInLoop, this, ci));
 }
 
+BaseConnPtr TcpClient::getConn(const ConnInfo & ci)
+{
+    return _connMap.getConn(ci);
+}
+
 BaseConnPtr TcpClient::getNextConn()
 {
 #if 0

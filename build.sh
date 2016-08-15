@@ -42,6 +42,64 @@ build_base(){
 	cd ../../
 }
 
+build_hiredis-vip(){
+	PROJECT=hiredis-vip
+
+    cd $PROJECT
+	
+	BUILDTYPE=Release
+	if  [ "$1"x = "Debug"x ]; then
+		BUILDTYPE=Debug
+	fi	
+
+	if [ ! -d $BUILDTYPE ]; then
+		mkdir $BUILDTYPE
+	fi
+	
+	cd $BUILDTYPE
+			
+    cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE -B. -H../
+   
+	make
+    if [ $? -eq 0 ]; then
+        echo "make $PROJECT successed";
+    else
+        echo "make $PROJECT failed";
+        exit;
+    fi
+	
+	cd ../../
+}
+
+build_hiredis-test(){
+	PROJECT=hiredis-test
+
+    cd $PROJECT
+	
+	BUILDTYPE=Release
+	if  [ "$1"x = "Debug"x ]; then
+		BUILDTYPE=Debug
+	fi	
+
+	if [ ! -d $BUILDTYPE ]; then
+		mkdir $BUILDTYPE
+	fi
+	
+	cd $BUILDTYPE
+			
+    cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE -B. -H../
+   
+	make
+    if [ $? -eq 0 ]; then
+        echo "make $PROJECT successed";
+    else
+        echo "make $PROJECT failed";
+        exit;
+    fi
+	
+	cd ../../
+}
+
 clean() {
 	echo "begin clean $1 $2"
 	
@@ -69,6 +127,12 @@ case $1 in
 		;;
 	base)
 		build_base
+		;;
+	hiredis-vip)
+		build_hiredis-vip
+		;;
+	hiredis-test)
+		build_hiredis-test
 		;;
 	all)
 		build_base

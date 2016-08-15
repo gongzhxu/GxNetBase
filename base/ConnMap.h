@@ -84,10 +84,6 @@ public:
         _connMap.erase(key);
     }
 
-    size_t getConnCount()
-    {
-        return _connMap.size();
-    }
 
     void stopConn()
     {
