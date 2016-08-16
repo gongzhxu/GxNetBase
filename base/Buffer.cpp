@@ -7,4 +7,5 @@ size_t Buffer::append(const void * buf, size_t len)
     resize(oldlen+len);
 
     memcpy(data(oldlen), buf, len);
+    return len;
 }
