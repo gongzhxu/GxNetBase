@@ -5,10 +5,10 @@
 LogFile::LogFile(const std::string & basename,
                  size_t rollSize,
                  int flushInterval):
-    m_basename(basename),
-    m_rollSize(rollSize),
-    m_flushInterval(flushInterval),
-    m_lastFlush(0)
+    _basename(basename),
+    _rollSize(rollSize),
+    _flushInterval(flushInterval),
+    _lastFlush(0)
 {
     rollFile();
 }
@@ -21,19 +21,19 @@ void LogFile::append(const char * logline, int len)
 
     if(len > 0)
     {
-        m_file->fwrite(logline, len);
+        _file->fwrite(logline, len);
     }
 
-    if(m_file->getWrittenBytes() > m_rollSize || m_fileDay != nowDay)
+    if(_file->getWrittenBytes() > _rollSize || _fileDay != nowDay)
     {
         rollFile();
     }
     else
     {
-        if(now - m_lastFlush > m_flushInterval)
+        if(now - _lastFlush > _flushInterval)
         {
-            m_lastFlush = now;
-            m_file->fflush();
+            _lastFlush = now;
+            _file->fflush();
         }
     }
 }
@@ -41,12 +41,12 @@ void LogFile::append(const char * logline, int len)
 bool LogFile::rollFile()
 {
     time_t now;
-    std::string filename = getLogFileName(m_basename, now);
+    std::string filename = getLogFileName(_basename, now);
 
-    m_file.reset(new File(filename));
+    _file.reset(new File(filename));
 
     struct tm * pTm = localtime(&now);
-    m_fileDay = pTm->tm_mday;
+    _fileDay = pTm->tm_mday;
 
     return false;
 }

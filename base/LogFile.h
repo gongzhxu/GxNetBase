@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <memory>
+#include <unistd.h>
 
 class LogFile
 {
@@ -28,10 +29,11 @@ private:
     {
     public:
         File(std::string & filename):
-            m_fp(::fopen(filename.c_str(), "ae")),
-            m_writtenBytes(0)
+            _filename(filename),
+            _fp(::fopen(filename.c_str(), "a")),
+            _writtenBytes(0)
             {
-                if(m_fp == NULL)
+                if(_fp == NULL)
                 {
                     fprintf(stderr,
                             "create log file %s error:%s\n",
@@ -41,33 +43,37 @@ private:
                 }
             }
 
-        ~File() { ::fclose(m_fp); }
+        ~File() { ::fclose(_fp); }
     public:
-        size_t getWrittenBytes() { return m_writtenBytes; }
+        size_t getWrittenBytes() { return _writtenBytes; }
 
         size_t fwrite(const char * logline, const size_t len)
         {
-            m_writtenBytes += len;
-            return ::fwrite(logline, 1, len, m_fp);
+            _writtenBytes += len;
+            return ::fwrite(logline, 1, len, _fp);
         }
+
+        int ferror() { return ::ferror(_fp); }
 
         void fflush()
         {
-            ::fflush(m_fp);
+            ::freopen(_filename.c_str(), "a", _fp);
+            ::fflush(_fp);
         }
     private:
-        FILE * m_fp;
-        size_t m_writtenBytes;
+        std::string _filename;
+        FILE * _fp;
+        size_t _writtenBytes;
     };
 
 private:
-    const std::string m_basename;
-    const size_t m_rollSize;
-    const int m_flushInterval;
-    time_t m_lastFlush;
-    int m_fileDay;
+    const std::string _basename;
+    const size_t _rollSize;
+    const int _flushInterval;
+    time_t _lastFlush;
+    int _fileDay;
 
-    std::unique_ptr<File> m_file;
+    std::unique_ptr<File> _file;
 };
 
 #endif // _LOGFILE_H
