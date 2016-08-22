@@ -17,13 +17,13 @@ BaseConn::BaseConn(EventLoop * loop):
     _inputBuffer(nullptr),
     _tie(nullptr)
 {
-    LOG_INFO("Create Conn:%p", this);
+    LOG_DEBUG("Create Conn:%p", this);
     assert(_loop != nullptr);
 }
 
 BaseConn::~BaseConn()
 {
-    LOG_INFO("Delete Conn:%p", this);
+    LOG_DEBUG("Delete Conn:%p", this);
 }
 
 int BaseConn::readInput()
@@ -83,22 +83,21 @@ void BaseConn::doConnect(TcpClient * pClient, const ConnInfo & ci)
 
 void BaseConn::onEvent(short what)
 {
-    //LOG_INFO("%p, what:0x%x", this, what);
     if(what & BEV_EVENT_CONNECTED)
     {
-        LOG_INFO("connect:%s", strerror(errno));
+        LOG_DEBUG("connect:%s", strerror(errno));
         connectInLoop();
 
     }
     else  if(what & (BEV_EVENT_READING | BEV_EVENT_WRITING | BEV_EVENT_EOF | BEV_EVENT_ERROR))
     {
-        LOG_INFO("error:%s", strerror(errno));
+        LOG_DEBUG("error:%s", strerror(errno));
         closeInLoop();
     }
     else
     {
         //can't do here
-        LOG_INFO("unknown error:%s", strerror(errno));
+        LOG_ERROR("unknown error:%s", strerror(errno));
         abort();
     }
 }
@@ -112,7 +111,7 @@ void BaseConn::connectInLoop()
     _connect_cb(shared_from_this());
 
     struct sockaddr_in addr = base::getPeerAddr(_sockfd);
-    LOG_INFO("new conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), addr.sin_port, this, _sockfd);
+    LOG_DEBUG("new conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), addr.sin_port, this, _sockfd);
 
     onConnect();
 }
@@ -127,7 +126,7 @@ void BaseConn::closeInLoop()
     _bClosed = true;
 
     struct sockaddr_in addr = base::getPeerAddr(_sockfd);
-    LOG_INFO("del conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), addr.sin_port, this, _sockfd);
+    LOG_DEBUG("del conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), addr.sin_port, this, _sockfd);
 
     onClose();
 

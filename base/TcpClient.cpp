@@ -90,7 +90,7 @@ void TcpClient::onConnect(const BaseConnPtr & pConn)
         if(pOldConn && !pOldConn->shutdownd())
         {
             pConn->shutdown();
-            LOG_INFO("not I want, something must be wrong");
+            LOG_FATAL("not I want, something must be wrong");
         }
         else
         {

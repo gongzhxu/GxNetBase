@@ -42,8 +42,6 @@ private:
     std::condition_variable _cond;
 
     LoggerList _loggers;
-
-
 };
 
 #endif // _ASYNC_LOGGING_H

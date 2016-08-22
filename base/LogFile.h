@@ -49,6 +49,7 @@ private:
 
         size_t fwrite(const char * logline, const size_t len)
         {
+            ::freopen(_filename.c_str(), "a", _fp);
             _writtenBytes += len;
             return ::fwrite(logline, 1, len, _fp);
         }
@@ -57,7 +58,6 @@ private:
 
         void fflush()
         {
-            ::freopen(_filename.c_str(), "a", _fp);
             ::fflush(_fp);
         }
     private:
