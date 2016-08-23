@@ -9,11 +9,13 @@
 AsyncLogging::AsyncLogging(const std::string & basename,
                            Logger::LogLevel level,
                            size_t rollSize,
-                           int flushInterval):
+                           int flushInterval,
+                           bool print):
      _basename(basename),
      _level(level),
      _rollSize(rollSize),
      _flushInterval(flushInterval),
+     _print(print),
      _running(false)
 {
     _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
@@ -24,6 +26,7 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
     _level(Logger::INFO),
     _rollSize(DEF_ROLLSIZE),
     _flushInterval(DEF_FLUSHINTERVAL),
+    _print(true),
     _running(false)
 {
     ConfigFileReader cfgFile(szCfgFile);
@@ -55,6 +58,12 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
         }
     }
 
+    char * strPrint = cfgFile.GetConfigName("Print");
+    if(strFlushInterval)
+    {
+        _print = atoi(strPrint);
+    }
+
     _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
 }
 
@@ -84,8 +93,9 @@ void AsyncLogging::append(LoggerPtr && logger)
 
 void AsyncLogging::threadFunc()
 {
-    _running = true;
     LogFile output(_basename, _rollSize, false);
+
+    _running = true;
     while(true)
     {
         LoggerList loggers;
@@ -113,10 +123,14 @@ void AsyncLogging::threadFunc()
 
             LoggerPtr pLogger = *it;
             size_t len = pLogger->format(data, Logger::MAX_LOG_LEN);
-            printf(data);
             output.append(data, len);
+
+            if(_print)
+            {
+                printf(data);
+            }
         }
 
-        fflush(stdout);
+        if(_print) { fflush(stdout); }
     }
 }

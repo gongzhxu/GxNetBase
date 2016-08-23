@@ -20,7 +20,8 @@ public:
     AsyncLogging(const std::string & basename,
                  Logger::LogLevel level,
                  size_t rollSize = DEF_ROLLSIZE,
-                 int flushInterval = DEF_FLUSHINTERVAL);
+                 int flushInterval = DEF_FLUSHINTERVAL,
+                 bool print = true);
 
     AsyncLogging(const char * szCfgFile);
     ~AsyncLogging();
@@ -35,6 +36,7 @@ private:
     Logger::LogLevel _level;
     size_t _rollSize;
     uint32_t _flushInterval;
+    bool    _print;
     bool _running;
 
     std::thread _thread;
