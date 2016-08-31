@@ -111,7 +111,7 @@ void BaseConn::connectInLoop()
     _connect_cb(shared_from_this());
 
     struct sockaddr_in addr = base::getPeerAddr(_sockfd);
-    LOG_DEBUG("new conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), addr.sin_port, this, _sockfd);
+    LOG_DEBUG("new conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), this, _sockfd);
 
     onConnect();
 }
@@ -126,7 +126,7 @@ void BaseConn::closeInLoop()
     _bClosed = true;
 
     struct sockaddr_in addr = base::getPeerAddr(_sockfd);
-    LOG_DEBUG("del conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), addr.sin_port, this, _sockfd);
+    LOG_DEBUG("del conn %s:%d this=%p, fd=%d", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), this, _sockfd);
 
     onClose();
 
