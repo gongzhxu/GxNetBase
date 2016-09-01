@@ -15,7 +15,7 @@
 #include "Buffer.h"
 
 #define NOTUSED_ARG(v) ((void)v)		// used this to remove warning C4100, unreferenced parameter
-#define ASSERT_ABORT(c) if(!(c)) { LOG_FATAL("program abort"); exit(1);}
+#define ASSERT_ABORT(c) if(!(c)) { LOG_FATAL("program abort"); exit(EXIT_FAILURE);}
 
 #if 1
 

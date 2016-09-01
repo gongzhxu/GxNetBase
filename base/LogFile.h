@@ -39,7 +39,7 @@ private:
                             "create log file %s error:%s\n",
                             filename.c_str(),
                             strerror(errno));
-                    abort();
+                    exit(EXIT_FAILURE);
                 }
             }
 

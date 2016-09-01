@@ -34,7 +34,7 @@ void TcpServer::start()
     if(_listener == nullptr)
     {
         LOG_INFO("TcpServer listen port=%d, %s", _connInfo.port(), strerror(errno));
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 }
 

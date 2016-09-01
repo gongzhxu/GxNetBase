@@ -75,7 +75,7 @@ public:
 private:
     void formatTime();
 
-public:
+private:
     LogLevel    _level;
     int         _tid;
     SourceFile  _file;
