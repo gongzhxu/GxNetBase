@@ -51,7 +51,10 @@ void ConfigFileReader::_LoadFile(const char* filename)
 	FILE* fp = fopen(filename, "r");
 	if (!fp)
 	{
-		LOG_FATAL("can not open %s,errno = %d", filename,errno);
+		fprintf(stderr,
+                "open configfile=%s,error=%s\n",
+                filename,
+                strerror(errno));
 		return;
 	}
 

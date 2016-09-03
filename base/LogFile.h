@@ -36,7 +36,7 @@ private:
                 if(_fp == NULL)
                 {
                     fprintf(stderr,
-                            "create log file %s error:%s\n",
+                            "create logfile=%s,error=%s\n",
                             filename.c_str(),
                             strerror(errno));
                     exit(EXIT_FAILURE);

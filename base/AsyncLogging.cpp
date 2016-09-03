@@ -16,7 +16,7 @@ AsyncLogging::AsyncLogging(const std::string & basename,
      _rollSize(rollSize),
      _flushInterval(flushInterval),
      _print(print),
-     _running(false)
+     _running(true)
 {
     _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
 }
@@ -69,16 +69,9 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
 
 AsyncLogging::~AsyncLogging()
 {
-    if(_running)
-    {
-        _running = false;
-        _cond.notify_one();
-        _thread.join();
-    }
-    else
-    {
-        _thread.detach();
-    }
+    _running = false;
+    _cond.notify_one();
+    _thread.join();
 }
 
 void AsyncLogging::append(LoggerPtr && logger)
@@ -95,7 +88,6 @@ void AsyncLogging::threadFunc()
 {
     LogFile output(_basename, _rollSize, false);
 
-    _running = true;
     while(true)
     {
         LoggerList loggers;
