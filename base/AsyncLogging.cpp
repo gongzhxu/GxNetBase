@@ -27,7 +27,7 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
     _rollSize(DEF_ROLLSIZE),
     _flushInterval(DEF_FLUSHINTERVAL),
     _print(true),
-    _running(false)
+    _running(true)
 {
     ConfigFileReader cfgFile(szCfgFile);
     char * strBaseName = cfgFile.GetConfigName("Name");
@@ -99,6 +99,7 @@ void AsyncLogging::threadFunc()
             {
                 if(!_running)
                 {
+                    fprintf(stderr, "log thread exit!!!");
                     return;
                 }
 
