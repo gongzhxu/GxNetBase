@@ -18,6 +18,9 @@ class BaseConn;
 typedef std::shared_ptr<BaseConn> BaseConnPtr;
 typedef std::map<uint32_t,  BaseConnPtr> ConnMap_t;
 typedef std::function<void (TcpServer *, evutil_socket_t)> AcceptCallback;
+typedef std::shared_ptr<TcpServer> TcpServerPtr;
+
+#define MakeTcpServerPtr std::make_shared<TcpServer>
 
 class TcpServer
 {

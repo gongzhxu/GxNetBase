@@ -57,7 +57,7 @@ BaseConnPtr TcpClient::getNextConn()
 
 void TcpClient::addClientInLoop(const ConnInfo & ci)
 {
-    LOG_INFO("addClientInLoop:%s, %d, %d", ci.host().c_str(), ci.port(), ci.id());
+    LOG_INFO("addClientInLoop:%s, %d", ci.hostname().c_str(),  ci.id());
     if(!_connMap.hasConn(ci))
     {
         _connMap.addConn(ci, nullptr);
@@ -65,7 +65,7 @@ void TcpClient::addClientInLoop(const ConnInfo & ci)
     }
     else
     {
-        LOG_INFO("FindClientInLoop:%s, %d, %d", ci.host().c_str(), ci.port(), ci.id());
+        LOG_INFO("FindClientInLoop:%s, %d, %d", ci.hostname().c_str(),  ci.id());
     }
 }
 

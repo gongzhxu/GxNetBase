@@ -51,7 +51,6 @@ protected:
     virtual void onConnect() {}
     virtual void onClose() {}
 
-
     void connectInLoop();
     void closeInLoop();
     void sendInLoop(const void *data, size_t datlen);

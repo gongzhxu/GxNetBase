@@ -18,6 +18,10 @@ typedef std::vector<ConnInfo> ConnInfos;
 typedef std::vector<BaseConnPtr> ConnList_t;
 typedef std::function<void (TcpClient *, const ConnInfo &)> ConnectCallback;
 
+typedef std::shared_ptr<TcpClient> TcpClientPtr;
+
+#define MakeTcpClientPtr std::make_shared<TcpClient>
+
 class TcpClient
 {
 public:

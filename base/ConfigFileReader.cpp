@@ -7,6 +7,7 @@
 
 ConfigFileReader::ConfigFileReader(const char * filename)
 {
+    std::unique_lock<std::mutex> lock(_mutex);
 	_LoadFile(filename);
 }
 
@@ -14,24 +15,38 @@ ConfigFileReader::~ConfigFileReader()
 {
 }
 
-char* ConfigFileReader::GetConfigName(const char* name)
+char * ConfigFileReader::GetConfigName(const char * name)
 {
-	if (!_load_ok)
+	if(!_load_ok)
 		return nullptr;
 
-	char* value = nullptr;
-	ConfigMap::iterator it = _config_map.find(name);
-	if (it != _config_map.end()) {
-		value = (char*)it->second.c_str();
+	char * value = nullptr;
+
+	{
+        std::unique_lock<std::mutex> lock(_mutex);
+        ConfigMap::iterator it = _config_map.find(name);
+        if (it != _config_map.end())
+        {
+            value = (char*)it->second.c_str();
+        }
 	}
 
 	return value;
 }
 
-int ConfigFileReader::SetConfigValue(const char* name, const char* value)
+char * ConfigFileReader::GetConfigName(const char * name, int id)
+{
+    char nameStr[256] = {0};
+    snprintf(nameStr, sizeof(nameStr), "%s%d", name, id);
+    return GetConfigName(nameStr);
+}
+
+int ConfigFileReader::SetConfigValue(const char* name, const char * value)
 {
     if(!_load_ok)
         return -1;
+
+    std::unique_lock<std::mutex> lock(_mutex);
 
     ConfigMap::iterator it = _config_map.find(name);
     if(it != _config_map.end())
@@ -44,7 +59,7 @@ int ConfigFileReader::SetConfigValue(const char* name, const char* value)
     }
     return _WriteFIle();
 }
-void ConfigFileReader::_LoadFile(const char* filename)
+void ConfigFileReader::_LoadFile(const char * filename)
 {
     _config_file.clear();
     _config_file.append(filename);
@@ -85,9 +100,9 @@ void ConfigFileReader::_LoadFile(const char* filename)
 	_load_ok = true;
 }
 
-int ConfigFileReader::_WriteFIle(const char* filename)
+int ConfigFileReader::_WriteFIle(const char * filename)
 {
-   FILE* fp = nullptr;
+   FILE * fp = nullptr;
    if(filename == nullptr)
    {
        fp = fopen(_config_file.c_str(), "w");
@@ -117,9 +132,9 @@ int ConfigFileReader::_WriteFIle(const char* filename)
    fclose(fp);
    return 0;
 }
-void ConfigFileReader::_ParseLine(char* line)
+void ConfigFileReader::_ParseLine(char * line)
 {
-	char* p = strchr(line, '=');
+	char * p = strchr(line, '=');
 	if (p == nullptr)
 		return;
 
@@ -132,10 +147,10 @@ void ConfigFileReader::_ParseLine(char* line)
 	}
 }
 
-char* ConfigFileReader::_TrimSpace(char* name)
+char * ConfigFileReader::_TrimSpace(char * name)
 {
 	// remove starting space or tab
-	char* start_pos = name;
+	char * start_pos = name;
 	while((*start_pos == ' ') || (*start_pos == '\t'))
 	{
 		start_pos++;
@@ -145,7 +160,7 @@ char* ConfigFileReader::_TrimSpace(char* name)
 		return nullptr;
 
 	// remove ending space or tab
-	char* end_pos = name + strlen(name) - 1;
+	char * end_pos = name + strlen(name) - 1;
 	while((*end_pos == ' ') || (*end_pos == '\t'))
 	{
 		*end_pos = 0;

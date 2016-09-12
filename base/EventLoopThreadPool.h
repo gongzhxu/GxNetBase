@@ -14,17 +14,16 @@ typedef std::shared_ptr<EventLoopThread> EventLoopThreadPtr;
 class EventLoopThreadPool
 {
 public:
-    EventLoopThreadPool(EventLoop * baseLoop, int numThreads);
+    EventLoopThreadPool(EventLoop * baseLoop);
     ~EventLoopThreadPool();
 public:
-    void start();
+    void start(int numThreads);
     void quit();
 
     EventLoop * getNextLoop();
     EventLoop * getModLoop(int sessionId);
 private:
     EventLoop * _baseLoop;
-    int _numThreads;
     size_t _next;
 
     std::vector<EventLoop *> _loops;

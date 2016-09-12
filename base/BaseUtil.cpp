@@ -48,3 +48,4 @@ void sprintfex(std::string & str, const char * format, ...)
 
     va_end(arglist1);
 }
+

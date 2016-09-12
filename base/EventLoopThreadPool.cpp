@@ -5,9 +5,8 @@
 #include "EventLoop.h"
 #include "EventLoopThread.h"
 
-EventLoopThreadPool::EventLoopThreadPool(EventLoop * baseLoop, int numThreads):
+EventLoopThreadPool::EventLoopThreadPool(EventLoop * baseLoop):
     _baseLoop(baseLoop),
-    _numThreads(numThreads),
     _next(0)
 {
 }
@@ -16,10 +15,10 @@ EventLoopThreadPool::~EventLoopThreadPool()
 {
 }
 
-void EventLoopThreadPool::start()
+void EventLoopThreadPool::start(int numThreads)
 {
     _baseLoop->assertInLoopThread();
-    for(int i = 0; i < _numThreads; ++i)
+    for(int i = 0; i < numThreads; ++i)
     {
         EventLoopThreadPtr elt(MakeEventLoopThreadPtr(i));
         _threads.push_back(elt);

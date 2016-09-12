@@ -249,13 +249,15 @@ void BaseConn::BuildConnect()
             break;
         }
         //please use async resolve the hostname
-        ret = bufferevent_socket_connect_hostname(_bufev, nullptr, AF_INET, _connInfo.host().c_str(), _connInfo.port());
+        AddrInfo addrInfo = _connInfo.getNextAddrInfo();
+        LOG_INFO("begin connect sa_family=%d, ip=%s, port=%d", addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
+        ret = bufferevent_socket_connect_hostname(_bufev, nullptr, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
         if(ret != 0)
         {
             LOG_ERROR("bufferevent_socket_connect_hostname error:%d", ret);
             break;
         }
-
+        LOG_INFO("connect the server...");
         return;
 
     }while(0);

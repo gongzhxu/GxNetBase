@@ -25,7 +25,9 @@ void TcpServer::start()
 {
     assert(_listener == nullptr);
     struct sockaddr_in listenAddr;
-    base::setAddr(_connInfo.host().c_str(), _connInfo.port(), &listenAddr);
+
+    AddrInfo addrInfo = _connInfo.getCurrAddrInfo();
+    base::setAddr(addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), &listenAddr);
 
     _listener = evconnlistener_new_bind(_loop->get_event(), onAccept, this,
                     LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
@@ -33,7 +35,7 @@ void TcpServer::start()
 
     if(_listener == nullptr)
     {
-        LOG_INFO("TcpServer listen port=%d, %s", _connInfo.port(), strerror(errno));
+        LOG_INFO("TcpServer listen sa_family=%d, addr=%s, port=%d, %s", addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), strerror(errno));
         exit(EXIT_FAILURE);
     }
 }

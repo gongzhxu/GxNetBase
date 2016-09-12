@@ -99,7 +99,7 @@ void AsyncLogging::threadFunc()
             {
                 if(!_running)
                 {
-                    fprintf(stderr, "log thread exit!!!");
+                    fprintf(stderr, "log thread exit!!!\n");
                     return;
                 }
 
@@ -120,7 +120,7 @@ void AsyncLogging::threadFunc()
 
             if(_print && pLogger->level() == Logger::INFO)
             {
-                printf(data);
+                printf("%s", data);
             }
         }
 
