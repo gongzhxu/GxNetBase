@@ -93,7 +93,7 @@ std::string base::getHostMac()
         return "";
     }
 
-    char szMac[64] = {0};
+    char szMac[16] = {0};
 
     while(ifaddrsVar!=NULL)
     {
@@ -103,14 +103,14 @@ std::string base::getHostMac()
 
         if(ioctl(sockfd, SIOCGIFHWADDR, &ifreqVar) == 0)
         {
-            snprintf(szMac, sizeof(szMac), "%02x:%02x:%02x:%02x:%02x:%02x",
+            snprintf(szMac, sizeof(szMac), "%02x%02x%02x%02x%02x%02x",
                         (unsigned char)ifreqVar.ifr_hwaddr.sa_data[0],
                         (unsigned char)ifreqVar.ifr_hwaddr.sa_data[1],
                         (unsigned char)ifreqVar.ifr_hwaddr.sa_data[2],
                         (unsigned char)ifreqVar.ifr_hwaddr.sa_data[3],
                         (unsigned char)ifreqVar.ifr_hwaddr.sa_data[4],
                         (unsigned char)ifreqVar.ifr_hwaddr.sa_data[5]);
-            if(strcmp(szMac, "00:00:00:00:00:00") != 0)
+            if(strcmp(szMac, "000000000000") != 0)
             {
                 break;
             }
