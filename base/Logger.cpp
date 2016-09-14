@@ -56,7 +56,7 @@ void Logger::formatTime()
                 tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec);
     }
 
-    snprintf(_time, sizeof(_time), "%s.%06dU ", t_time, microseconds);
+    snprintf(_time, sizeof(_time), "%s.%06d", t_time, microseconds);
 }
 
 size_t Logger::format(char * data, size_t len)
