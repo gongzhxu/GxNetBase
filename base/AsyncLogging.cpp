@@ -118,7 +118,7 @@ void AsyncLogging::threadFunc()
             size_t len = pLogger->format(data, Logger::MAX_LOG_LEN);
             output.append(data, len);
 
-            if(_print && pLogger->level() == Logger::INFO)
+            if((_print && pLogger->level() == Logger::INFO) || pLogger->raw())
             {
                 printf("%s", data);
             }

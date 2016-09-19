@@ -15,11 +15,20 @@ public:
         _data(arr),
         _size(N-1)
     {
-        const char * slash = strrchr(_data, '/'); // builtin function
+        const char* slash = strrchr(_data, '/');
         if(slash)
         {
             _data = slash + 1;
             _size -= static_cast<int>(_data - arr);
+        }
+        else
+        {
+            slash = strrchr(_data, '\\');
+            if(slash)
+            {
+                _data = slash + 1;
+                _size -= static_cast<int>(_data - arr);
+            }
         }
     }
 
@@ -30,14 +39,17 @@ public:
         if(slash)
         {
             _data = slash + 1;
+            _size = static_cast<int>(strlen(_data));
         }
         else
         {
             slash = strrchr(filename, '\\');
-            _data = slash + 1;
+            if(slash)
+            {
+                _data = slash + 1;
+                _size = static_cast<int>(strlen(_data));
+            }
         }
-
-        _size = static_cast<int>(strlen(_data));
     }
 
     const char * data() { return _data; }
@@ -67,10 +79,12 @@ public:
         NUM_LEVELS
     };
 
+    Logger(const char * fmt, ...);
     Logger(LogLevel level, const char * file, int line, const char * func, const char * fmt, ...);
     ~Logger();
 
     LogLevel level() const { return _level; }
+    bool raw() { return _raw; }
     size_t format(char * data, size_t len);
 private:
     void formatTime();
@@ -83,6 +97,7 @@ private:
     const char * _func;
     char        _time[64];
     char        _content[MAX_CONTENT_LEN];
+    bool        _raw;
 };
 
 #endif // _LOGGER_H

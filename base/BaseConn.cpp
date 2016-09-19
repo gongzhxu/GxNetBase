@@ -26,6 +26,17 @@ BaseConn::~BaseConn()
     LOG_DEBUG("Delete Conn:%p", this);
 }
 
+void BaseConn::sendPdu(const std::shared_ptr<void> & pdu)
+{
+    if(!connected())
+    {
+        LOG_WARN("not connected");
+        return;
+    }
+
+    _loop->runInLoop(std::bind(&BaseConn::sendPduInLoop, shared_from_this(), pdu));
+}
+
 int BaseConn::readInput()
 {
     _loop->assertInLoopThread();
@@ -152,6 +163,12 @@ void BaseConn::closeInLoop()
     _bConnected = false;
     _sockfd = -1;
     _tie.reset();
+}
+
+
+void BaseConn::sendPduInLoop(const std::shared_ptr<void> & pdu)
+{
+    sendInLoop(pdu);
 }
 
 void BaseConn::sendInLoop(const void *data, size_t datlen)

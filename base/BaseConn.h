@@ -19,8 +19,6 @@ typedef std::shared_ptr<BaseConn> BaseConnPtr;
 typedef std::map<uint32_t,  BaseConnPtr> ConnMap_t;
 typedef std::function<void (const BaseConnPtr &)> ConnCallback;
 
-#define MakePduBasePtr std::make_shared<PduBase>
-
 class BaseConn:public std::enable_shared_from_this<BaseConn>
 {
 public:
@@ -28,20 +26,23 @@ public:
     virtual ~BaseConn();
 
 public:
+    void sendPdu(const std::shared_ptr<void> & pdu);
+
     int readInput();
     int readbuf(void *data, size_t datlen);
+
     void close();
     void shutdown();
 
     void doAccept(TcpServer * pServer, evutil_socket_t sockfd);
     void doConnect(TcpClient * pClient, const ConnInfo & ci);
 
-    inline EventLoop * getLoop() { return _loop; }
-    inline bool connected() { return _bConnected; }
-    inline bool closed() { return _bClosed; }
-    inline bool shutdownd() { return _bShutdownd; }
-    inline int getSockfd() { return _sockfd; }
-    inline ConnInfo & getConnInfo() { return _connInfo; }
+    inline EventLoop * getLoop() const { return _loop; }
+    inline bool connected() const { return _bConnected; }
+    inline bool closed() const { return _bClosed; }
+    inline bool shutdownd() const { return _bShutdownd; }
+    inline int getSockfd() const { return _sockfd; }
+    inline const ConnInfo & getConnInfo() const { return _connInfo; }
 
 protected:
     virtual void onRead() {};
@@ -50,9 +51,12 @@ protected:
 
     virtual void onConnect() {}
     virtual void onClose() {}
+    virtual void sendInLoop(const std::shared_ptr<void> &) {}
 
     void connectInLoop();
     void closeInLoop();
+
+    void sendPduInLoop(const std::shared_ptr<void> & pdu);
     void sendInLoop(const void *data, size_t datlen);
     void sendInLoop(const void *data1, size_t datlen1, const void *data2, size_t datlen2);
 private:

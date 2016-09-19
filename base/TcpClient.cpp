@@ -120,7 +120,7 @@ void TcpClient::onClose(const BaseConnPtr & pConn)
     }
 
 #if 1
-    ConnInfo & ci = pConn->getConnInfo();
+    const ConnInfo & ci = pConn->getConnInfo();
     int interval = ci.retry();
     interval = interval < MIN_RETRY_INTERVAL? MIN_RETRY_INTERVAL: interval;
     interval = interval > MAX_RETRY_INTERVAL? MAX_RETRY_INTERVAL: interval;

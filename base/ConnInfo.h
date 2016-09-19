@@ -37,11 +37,11 @@ private:
 class ConnInfo:public std::less_equal<ConnInfo>
 {
 public:
-    ConnInfo(int id = 0, std::string hostname = "", int retry = 1):
+    ConnInfo(uint32_t id = 0, std::string hostname = "", int retry = 1):
         _id(id), _hostname(hostname), _retry(retry), _next(0)
     {}
 
-    ConnInfo(int id, std::string hostname, std::vector<AddrInfo> & addrinfo, int retry = 1):
+    ConnInfo(uint32_t id, std::string hostname, std::vector<AddrInfo> & addrinfo, int retry = 1):
         _id(id), _hostname(hostname), _retry(retry), _next(0)
     {
         _addrinfo.insert(_addrinfo.end(), addrinfo.begin(), addrinfo.end());
@@ -65,7 +65,7 @@ public:
 
 
 
-    int id() const { return _id; }
+    uint32_t id() const { return _id; }
     const std::string & hostname() const { return _hostname; }
     const std::vector<AddrInfo> & addrinfo() const { return _addrinfo; }
     const AddrInfo & addrinfo(size_t i) const { return _addrinfo[i]; }
@@ -109,7 +109,7 @@ public:
         return _addrinfo[curr];
     }
 private:
-    int         _id;
+    uint32_t         _id;
     std::string _hostname;
     std::vector<AddrInfo> _addrinfo;
     int         _retry;

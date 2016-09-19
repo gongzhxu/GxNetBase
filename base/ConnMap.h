@@ -96,6 +96,15 @@ public:
         _connMap.clear();
     }
 
+    void sendPdu(const std::shared_ptr<void> & pdu)
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        for(typename ConnMap_t::iterator it = _connMap.begin(); it != _connMap.end(); ++it)
+        {
+            (it->second)->sendPdu(pdu);
+        }
+    }
+
     size_t size() { return _connMap.size(); }
 
     void getAllConn(std::vector<BaseConnPtr> & connList)
