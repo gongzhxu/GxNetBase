@@ -8,36 +8,76 @@
 
 #include "BaseUtil.h"
 
-void base::setAddr(int sa_family, const char * ip, const uint16_t port, struct sockaddr_in * pAddr)
+int base::setAddr(int sa_family, const char * ip, const uint16_t port, base::SockAddr * pAddr)
 {
-    memset(pAddr, 0, sizeof(struct sockaddr_in));
-    pAddr->sin_family = sa_family;
-    pAddr->sin_port = htons(port);
-    pAddr->sin_addr.s_addr = inet_addr(ip);
+    memset(pAddr, 0, sizeof(base::SockAddr));
+
+    if(sa_family == AF_INET)
+    {
+        pAddr->addr.sin_family = sa_family;
+        pAddr->addr.sin_port = htons(port);
+        pAddr->addr.sin_addr.s_addr = inet_addr(ip);
+        return sizeof(pAddr->addr);
+    }
+    else if(sa_family == AF_INET6)
+    {
+        pAddr->addr6.sin6_family = sa_family;
+        pAddr->addr6.sin6_port = htons(port);
+        inet_pton(AF_INET6, ip, (void *)&(pAddr->addr6.sin6_addr));
+        return sizeof(pAddr->addr6);
+    }
+
+    return 0;
 }
 
-struct sockaddr_in base::getLocalAddr(int sockfd)
+void base::getLocalAddr(int sockfd, std::string & ip, uint16_t & port)
 {
-    struct sockaddr_in localAddr;
+    base::SockAddr localAddr;
     memset(&localAddr, 0, sizeof(localAddr));
     socklen_t addrLen = sizeof(localAddr);
     if(::getpeername(sockfd, (struct sockaddr*)&localAddr, &addrLen) < 0)
     {
         //LOG
     }
-    return localAddr;
+
+    if(addrLen == sizeof(localAddr.addr))
+    {
+        ip = inet_ntoa(localAddr.addr.sin_addr);
+        port = ntohs(localAddr.addr.sin_port);
+    }
+    else if(addrLen == sizeof(localAddr.addr6))
+    {
+        char szIp[INET6_ADDRSTRLEN] = {0};
+        inet_ntop(AF_INET6, &(localAddr.addr6.sin6_addr), szIp, sizeof(szIp));
+
+        ip = szIp;
+        port = ntohs(localAddr.addr6.sin6_port);
+    }
 }
 
-struct sockaddr_in base::getPeerAddr(int sockfd)
+void base::getPeerAddr(int sockfd, std::string & ip, uint16_t & port)
 {
-    struct sockaddr_in peerAddr;
+    base::SockAddr peerAddr;
     memset(&peerAddr, 0, sizeof(peerAddr));
     socklen_t addrLen = sizeof(peerAddr);
     if(::getpeername(sockfd, (struct sockaddr*)&peerAddr, &addrLen) < 0)
     {
         //LOG
     }
-    return peerAddr;
+
+    if(addrLen == sizeof(peerAddr.addr))
+    {
+        ip = inet_ntoa(peerAddr.addr.sin_addr);
+        port = ntohs(peerAddr.addr.sin_port);
+    }
+    else if(addrLen == sizeof(peerAddr.addr6))
+    {
+        char szIp[INET6_ADDRSTRLEN] = {0};
+        inet_ntop(AF_INET6, &(peerAddr.addr6.sin6_addr), szIp, sizeof(szIp));
+
+        ip = szIp;
+        port = ntohs(peerAddr.addr6.sin6_port);
+    }
 }
 
 void base::setReuseAddr(int sockfd, bool on)
@@ -72,9 +112,28 @@ void base::setKeepAlive(int sockfd, bool on,  int keepIdle, int keepInterval, in
 
 bool base::isZeroAddr(int sa_family, const char * ip)
 {
-    struct in_addr addr;
-    inet_pton(sa_family, ip, &addr);
-    return addr.s_addr == 0;
+    if(sa_family == AF_INET)
+    {
+        struct in_addr addr;
+        inet_pton(sa_family, ip, &addr);
+        return addr.s_addr == INADDR_ANY;
+    }
+    else if(sa_family == AF_INET6)
+    {
+        struct in6_addr addr;
+        inet_pton(sa_family, ip, &addr);
+        for(int i = 0; i < 4; ++i)
+        {
+            if(addr.s6_addr32[i] != in6addr_any.s6_addr32[i])
+            {
+               return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -145,7 +204,7 @@ void base::getAddrInfo(std::vector<AddrInfo> & addrInfos, uint32_t port)
         }
         else if(ifaddrsVar->ifa_addr->sa_family==AF_INET6)
         {
-            void * tmpAddrPtr=&((struct sockaddr_in *)ifaddrsVar->ifa_addr)->sin_addr;
+            void * tmpAddrPtr=&((struct sockaddr_in6 *)ifaddrsVar->ifa_addr)->sin6_addr;
             char szIp[INET6_ADDRSTRLEN] = {0};
             inet_ntop(AF_INET6, tmpAddrPtr, szIp, sizeof(szIp));
             addrInfos.push_back(AddrInfo(AF_INET6, szIp, port));

@@ -10,9 +10,15 @@
 namespace base
 {
 
-void setAddr(int sa_family, const char * ip, const uint16_t port, struct sockaddr_in * pAddr);
-struct sockaddr_in getLocalAddr(int sockfd);
-struct sockaddr_in getPeerAddr(int sockfd);
+union SockAddr
+{
+    struct sockaddr_in addr;
+    struct sockaddr_in6 addr6;
+};
+
+int setAddr(int sa_family, const char * ip, const uint16_t port, base::SockAddr * pAddr);
+void getLocalAddr(int sockfd, std::string & ip, uint16_t & port);
+void getPeerAddr(int sockfd, std::string & ip, uint16_t & port);
 void setReuseAddr(int sockfd, bool on);
 void setReusePort(int sockfd, bool on);
 void setTcpNoDely(int sockfd, bool on);

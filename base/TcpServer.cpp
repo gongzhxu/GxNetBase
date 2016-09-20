@@ -24,14 +24,15 @@ TcpServer::~TcpServer()
 void TcpServer::start()
 {
     assert(_listener == nullptr);
-    struct sockaddr_in listenAddr;
 
     AddrInfo addrInfo = _connInfo.getCurrAddrInfo();
-    base::setAddr(addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), &listenAddr);
+
+    base::SockAddr sockAddr;
+    int sockLen = base::setAddr(addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), &sockAddr);
 
     _listener = evconnlistener_new_bind(_loop->get_event(), onAccept, this,
                     LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
-                    (struct sockaddr*)&listenAddr, sizeof(listenAddr));
+                    (const sockaddr *)&sockAddr, sockLen);
 
     if(_listener == nullptr)
     {
