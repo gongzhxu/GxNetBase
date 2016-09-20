@@ -188,7 +188,7 @@ std::string base::getHostName()
     return hostname;
 }
 
-void base::getAddrInfo(std::vector<AddrInfo> & addrInfos, uint32_t port)
+void base::getAddrInfo(std::vector<AddrInfo> & addrInfos, uint32_t port, bool bIpv6)
 {
     struct ifaddrs * ifaddrsVar = nullptr;
     getifaddrs(&ifaddrsVar);
@@ -204,10 +204,13 @@ void base::getAddrInfo(std::vector<AddrInfo> & addrInfos, uint32_t port)
         }
         else if(ifaddrsVar->ifa_addr->sa_family==AF_INET6)
         {
-            void * tmpAddrPtr=&((struct sockaddr_in6 *)ifaddrsVar->ifa_addr)->sin6_addr;
-            char szIp[INET6_ADDRSTRLEN] = {0};
-            inet_ntop(AF_INET6, tmpAddrPtr, szIp, sizeof(szIp));
-            addrInfos.push_back(AddrInfo(AF_INET6, szIp, port));
+            if(bIpv6)
+            {
+                void * tmpAddrPtr=&((struct sockaddr_in6 *)ifaddrsVar->ifa_addr)->sin6_addr;
+                char szIp[INET6_ADDRSTRLEN] = {0};
+                inet_ntop(AF_INET6, tmpAddrPtr, szIp, sizeof(szIp));
+                addrInfos.push_back(AddrInfo(AF_INET6, szIp, port));
+            }
         }
 
         ifaddrsVar=ifaddrsVar->ifa_next;
