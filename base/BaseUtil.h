@@ -18,6 +18,8 @@
 
 #define NOTUSED_ARG(v) ((void)v)		// used this to remove warning C4100, unreferenced parameter
 #define ASSERT_ABORT(c) if(!(c)) { LOG_FATAL("program abort"); exit(EXIT_FAILURE);}
+#define MAX_VALUE(a,b) (a > b? a: b)
+#define MIN_VALUE(a,b) (a < b? a: b)
 
 #if 1
 

@@ -5,6 +5,9 @@
 
 #include "LogFile.h"
 #include "ConfigFileReader.h"
+#include "Buffer.h"
+
+#define MAX_LOG_BUF_SIZE 1024000
 
 AsyncLogging::AsyncLogging(const std::string & basename,
                            Logger::LogLevel level,
@@ -99,7 +102,7 @@ void AsyncLogging::threadFunc()
             {
                 if(!_running)
                 {
-                    fprintf(stderr, "log thread exit!!!\n");
+                    output.append("log thread exit!!!\n");
                     return;
                 }
 
@@ -110,20 +113,45 @@ void AsyncLogging::threadFunc()
             loggers.swap(_loggers);
         }
 
-        for(LoggerList::iterator it = loggers.begin(); it != loggers.end(); ++it)
+
+        Buffer outputBuf;
+        Buffer printBuf;
+        char data[Logger::MAX_LOG_LEN];
+
+        for(auto it = loggers.begin(); it != loggers.end(); ++it)
         {
-            char data[Logger::MAX_LOG_LEN];
-
             LoggerPtr pLogger = *it;
-            size_t len = pLogger->format(data, Logger::MAX_LOG_LEN);
-            output.append(data, len);
 
+            size_t len = pLogger->format(data, Logger::MAX_LOG_LEN);
+
+            outputBuf.append(data, len);
             if((_print && pLogger->level() == Logger::INFO) || pLogger->raw())
             {
-                printf("%s", data);
+                printBuf.append(data, len);
+            }
+
+
+            if(outputBuf.size() > MAX_LOG_BUF_SIZE)
+            {
+                output.append(outputBuf.data(), outputBuf.size());
+                outputBuf.clear();
+            }
+
+            if(printBuf.size() > MAX_LOG_BUF_SIZE)
+            {
+                ::fwrite(printBuf.data(), 1, printBuf.size(), stdout);
+                printBuf.clear();
             }
         }
 
-        if(_print) { fflush(stdout); }
+        if(!outputBuf.empty())
+        {
+            output.append(outputBuf.data(), outputBuf.size());
+        }
+
+        if(!printBuf.empty())
+        {
+            ::fwrite(printBuf.data(), 1, printBuf.size(), stdout);
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 
+
 void base::sprintfex(std::string & str, const char * format, ...)
 {
 
@@ -9,7 +10,7 @@ void base::sprintfex(std::string & str, const char * format, ...)
     va_list arglist1;
     va_start(arglist1, format);
 
-    str.resize(256);
+    str.resize(128);
     len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist1);
     if(static_cast<size_t>(len) > str.size())
     {
@@ -53,4 +54,45 @@ void base::splitex(const std::string & str, const std::string delim, std::vector
             ret.push_back(str1);
         }
     }
+}
+
+
+const char * base::getformat(int8_t)
+{
+    return "%" PRId8;
+}
+
+const char * base::getformat(uint8_t)
+{
+    return "%" PRIu8;
+}
+
+const char * base::getformat(int16_t)
+{
+    return "%" PRId16;
+}
+
+const char * base::getformat(uint16_t)
+{
+    return "%" PRIu16;
+}
+
+const char * base::getformat(int32_t)
+{
+    return "%" PRId32;
+}
+
+const char * base::getformat(uint32_t)
+{
+    return "%" PRIu32;
+}
+
+const char * base::getformat(int64_t)
+{
+    return "%" PRId64;
+}
+
+const char * base::getformat(uint64_t)
+{
+    return "%" PRIu64;
 }

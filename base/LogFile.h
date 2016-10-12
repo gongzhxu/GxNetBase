@@ -18,6 +18,7 @@ public:
             size_t rollSize,
             int flushInterval = 3);
 public:
+    void append(const char * logline);
     void append(const char * logline, int len);
 
     static char * getpwd( char * buf, int len);

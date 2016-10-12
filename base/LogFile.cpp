@@ -13,6 +13,11 @@ LogFile::LogFile(const std::string & basename,
     rollFile();
 }
 
+void LogFile::append(const char * logline)
+{
+    append(logline, strlen(logline));
+}
+
 void LogFile::append(const char * logline, int len)
 {
     time_t now = ::time(NULL);

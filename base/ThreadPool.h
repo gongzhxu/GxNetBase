@@ -18,14 +18,10 @@ public:
 
     void schedule(std::function<void()> && task)
     {
-        {
-            std::unique_lock<std::mutex> lock(_mutex);
-            assert(!_stop);
-            _tasks.emplace(std::move(task));
-            _condition.notify_one();
-        }
-
-        //LOG_INFO("begin notify:%p", this);
+        std::unique_lock<std::mutex> lock(_mutex);
+        assert(!_stop);
+        _tasks.emplace(std::move(task));
+        _condition.notify_one();
     }
 
     size_t pending()

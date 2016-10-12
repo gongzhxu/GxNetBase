@@ -48,7 +48,7 @@ void EventLoop::loop()
 {
     assert(_base != nullptr);
 
-    while(!_quit || _pendingFunctors.size())
+    while(!_quit)
     {
         int ret = event_base_loop(_base, EVLOOP_ONCE);
         if(ret == 1)
@@ -57,16 +57,15 @@ void EventLoop::loop()
             event_base_loopexit(_base, &delay);
         }
 
-        //LOG_TRACE("this loop:%p", this);
         doPendingFunctors();
     }
-    LOG_INFO("loop quited %p", this);
+    LOG_INFO("loop quited %p, _pendingFunctors=%d", this, _pendingFunctors.size());
 }
 
 //not thread safe, please close eventloop in the loop thread
 void EventLoop::quit()
 {
-    LOG_INFO("event loop quiting %p...", this);
+    LOG_DEBUG("event loop quiting %p...", this);
     _quit = true;
     if(!isInLoopThread())
     {
