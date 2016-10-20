@@ -1,6 +1,7 @@
 #include "LogFile.h"
 
 #include <unistd.h>
+#include <limits.h>
 
 LogFile::LogFile(const std::string & basename,
                  size_t rollSize,
@@ -61,20 +62,23 @@ std::string LogFile::getLogFileName(const std::string & basename, time_t & now)
     std::string filename;
     filename.reserve(basename.size() + 128);
 
-    char szPath[1024];
-    filename = getpwd(szPath, 1023);
+    char szPath[PATH_MAX] = {0};
+    filename = getpwd(szPath, sizeof(szPath) - 1);
     filename += "log/";
     mkdir(filename.c_str(), 0744);
 
-    filename += basename;
-
-    char timebuf[32];
+    char timebuf[32] = {0};
     struct tm tm;
     now = time(NULL);
     localtime_r(&now, &tm);
-    strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S", &tm);
-    filename += timebuf;
 
+    strftime(timebuf, sizeof(timebuf), "%Y-%m-%d/", &tm);
+    filename += timebuf;
+    mkdir(filename.c_str(), 0744);
+
+    strftime(timebuf, sizeof(timebuf), ".%Y%m%d-%H%M%S", &tm);
+    filename += basename;
+    filename += timebuf;
     filename += ".log";
 
     return filename;

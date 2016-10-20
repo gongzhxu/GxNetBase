@@ -8,7 +8,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <functional>
-#include <assert.h>
 
 class ThreadPool
 {
@@ -19,7 +18,6 @@ public:
     void schedule(std::function<void()> && task)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        assert(!_stop);
         _tasks.emplace(std::move(task));
         _condition.notify_one();
     }
