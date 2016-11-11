@@ -1,31 +1,28 @@
-#include "ConfigFileReader.h"
+#include "ConfigReader.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #include "BaseUtil.h"
 
-ConfigFileReader::ConfigFileReader(const char * filename)
+ConfigReader::ConfigReader(const char * filename):
+    _cfgFile(filename)
 {
     std::unique_lock<std::mutex> lock(_mutex);
-	_LoadFile(filename);
+    _LoadFile();
 }
 
-ConfigFileReader::~ConfigFileReader()
+ConfigReader::~ConfigReader()
 {
 }
 
-char * ConfigFileReader::GetConfigName(const char * name)
+std::string ConfigReader::GetNameStr(const char * name)
 {
-	if(!_load_ok)
-		return nullptr;
-
-	char * value = nullptr;
-
+	std::string value;
 	{
         std::unique_lock<std::mutex> lock(_mutex);
-        ConfigMap::iterator it = _config_map.find(name);
-        if (it != _config_map.end())
+        ConfigMap::iterator it = _cfgMap.find(name);
+        if (it != _cfgMap.end())
         {
             value = (char*)it->second.c_str();
         }
@@ -34,41 +31,61 @@ char * ConfigFileReader::GetConfigName(const char * name)
 	return value;
 }
 
-char * ConfigFileReader::GetConfigName(const char * name, int id)
+int ConfigReader::GetNameInt(const char * name, int defvalue)
 {
-    char nameStr[256] = {0};
-    snprintf(nameStr, sizeof(nameStr), "%s%d", name, id);
-    return GetConfigName(nameStr);
+    int value = defvalue;
+    std::string strValue = GetNameStr(name);
+    if(!strValue.empty())
+    {
+        value = atoi(strValue.c_str());
+    }
+
+    return value;
 }
 
-int ConfigFileReader::SetConfigValue(const char* name, const char * value)
+int ConfigReader::GetNameInt(int id, const char * name, int defvalue)
 {
-    if(!_load_ok)
-        return -1;
+    int value = defvalue;
+    std::string strValue = GetNameStr(id, name);
+    if(!strValue.empty())
+    {
+        value = atoi(strValue.c_str());
+    }
 
+    return value;
+}
+
+std::string ConfigReader::GetNameStr( int id, const char * name)
+{
+    std::string strName;
+    base::sprintfex(strName, "%s%d", name, id);
+    return GetNameStr(strName.c_str());
+}
+
+int ConfigReader::SetConfigValue(const char* name, const char * value)
+{
     std::unique_lock<std::mutex> lock(_mutex);
 
-    ConfigMap::iterator it = _config_map.find(name);
-    if(it != _config_map.end())
+    ConfigMap::iterator it = _cfgMap.find(name);
+    if(it != _cfgMap.end())
     {
         it->second = value;
     }
     else
     {
-        _config_map.insert(std::make_pair(name, value));
+        _cfgMap.insert(std::make_pair(name, value));
     }
     return _WriteFIle();
 }
-void ConfigFileReader::_LoadFile(const char * filename)
+
+void ConfigReader::_LoadFile()
 {
-    _config_file.clear();
-    _config_file.append(filename);
-	FILE* fp = fopen(filename, "r");
+	FILE* fp = fopen(_cfgFile.c_str(), "r");
 	if (!fp)
 	{
 		fprintf(stderr,
                 "open configfile=%s,error=%s\n",
-                filename,
+                _cfgFile.c_str(),
                 strerror(errno));
 		return;
 	}
@@ -97,28 +114,19 @@ void ConfigFileReader::_LoadFile(const char * filename)
 	}
 
 	fclose(fp);
-	_load_ok = true;
 }
 
-int ConfigFileReader::_WriteFIle(const char * filename)
+int ConfigReader::_WriteFIle()
 {
-   FILE * fp = nullptr;
-   if(filename == nullptr)
-   {
-       fp = fopen(_config_file.c_str(), "w");
-   }
-   else
-   {
-       fp = fopen(filename, "w");
-   }
+   FILE * fp = fopen(_cfgFile.c_str(), "w");
    if(fp == nullptr)
    {
        return -1;
    }
 
-   char szPaire[128];
-   ConfigMap::iterator it = _config_map.begin();
-   for (; it != _config_map.end(); it++)
+   char szPaire[128] = {0};
+   ConfigMap::iterator it = _cfgMap.begin();
+   for(; it != _cfgMap.end(); it++)
    {
         memset(szPaire, 0, sizeof(szPaire));
         snprintf(szPaire, sizeof(szPaire), "%s=%s\n", it->first.c_str(), it->second.c_str());
@@ -132,22 +140,22 @@ int ConfigFileReader::_WriteFIle(const char * filename)
    fclose(fp);
    return 0;
 }
-void ConfigFileReader::_ParseLine(char * line)
+void ConfigReader::_ParseLine(char * line)
 {
 	char * p = strchr(line, '=');
-	if (p == nullptr)
+	if(p == nullptr)
 		return;
 
 	*p = 0;
 	char* key =  _TrimSpace(line);
 	char* value = _TrimSpace(p + 1);
-	if (key && value)
+	if(key && value)
 	{
-		_config_map.insert(std::make_pair(key, value));
+		_cfgMap.insert(std::make_pair(key, value));
 	}
 }
 
-char * ConfigFileReader::_TrimSpace(char * name)
+char * ConfigReader::_TrimSpace(char * name)
 {
 	// remove starting space or tab
 	char * start_pos = name;

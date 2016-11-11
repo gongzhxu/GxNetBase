@@ -2,7 +2,6 @@
 
 #include <stdarg.h>
 
-
 void base::sprintfex(std::string & str, const char * format, ...)
 {
 
@@ -57,11 +56,7 @@ void base::splitex(const std::string & str, const std::string delim, std::vector
 }
 
 
-const char * base::getformat(int8_t)
-{
-    return "%" PRId8;
-}
-
+/*
 const char * base::getformat(uint8_t)
 {
     return "%" PRIu8;
@@ -94,5 +89,5 @@ const char * base::getformat(int64_t)
 
 const char * base::getformat(uint64_t)
 {
-    return "%" PRIu64;
-}
+
+}*/

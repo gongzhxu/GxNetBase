@@ -14,7 +14,7 @@ check_env(){
 }
 	
 build_base(){
-	PROJECT=base
+    PROJECT=base
 
     cd $PROJECT
 	
@@ -31,7 +31,7 @@ build_base(){
 			
     cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE -B. -H../
    
-	make
+    make
     if [ $? -eq 0 ]; then
         echo "make $PROJECT successed";
     else
@@ -42,63 +42,35 @@ build_base(){
 	cd ../../
 }
 
-build_hiredis-vip(){
-	PROJECT=hiredis-vip
+build(){
+    PROJECT=$1
 
     cd $PROJECT
-	
-	BUILDTYPE=Release
-	if  [ "$1"x = "Debug"x ]; then
-		BUILDTYPE=Debug
-	fi	
 
-	if [ ! -d $BUILDTYPE ]; then
-		mkdir $BUILDTYPE
-	fi
-	
-	cd $BUILDTYPE
-			
+    BUILDTYPE=Release
+    if  [ "$2"x = "Debug"x ]; then
+            BUILDTYPE=Debug
+    fi
+
+    if [ ! -d $BUILDTYPE ]; then
+            mkdir $BUILDTYPE
+    fi
+
+    cd $BUILDTYPE
+
     cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE -B. -H../
-   
-	make
+
+    make
     if [ $? -eq 0 ]; then
         echo "make $PROJECT successed";
     else
         echo "make $PROJECT failed";
         exit;
     fi
-	
-	cd ../../
+
+    cd ../../
 }
 
-build_hiredis-test(){
-	PROJECT=hiredis-test
-
-    cd $PROJECT
-	
-	BUILDTYPE=Release
-	if  [ "$1"x = "Debug"x ]; then
-		BUILDTYPE=Debug
-	fi	
-
-	if [ ! -d $BUILDTYPE ]; then
-		mkdir $BUILDTYPE
-	fi
-	
-	cd $BUILDTYPE
-			
-    cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE -B. -H../
-   
-	make
-    if [ $? -eq 0 ]; then
-        echo "make $PROJECT successed";
-    else
-        echo "make $PROJECT failed";
-        exit;
-    fi
-	
-	cd ../../
-}
 
 clean() {
 	echo "begin clean $1 $2"
@@ -125,17 +97,12 @@ case $1 in
 		fi
 		clean $2 $3
 		;;
-	base)
-		build_base
-		;;
-	hiredis-vip)
-		build_hiredis-vip
-		;;
-	hiredis-test)
-		build_hiredis-test
+	base|dbproxy)
+		build $1 $2
 		;;
 	all)
-		build_base
+		build base $2
+		build dbproxy $2
 		;;
 	*)	
 		print_help

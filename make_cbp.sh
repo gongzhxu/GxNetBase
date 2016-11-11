@@ -23,11 +23,12 @@ make_cbp(){
 }
 
 case $1 in
-	base|daemon|hiredis-vip|hiredis-test)
+	base|dbproxy|daemon)
 		make_cbp $1
 		;;
 	all)
 		make_cbp base
+		make_cbp dbproxy
 		make_cbp daemon
 		;;
 	*)

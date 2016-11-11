@@ -110,18 +110,18 @@ void base::setKeepAlive(int sockfd, bool on,  int keepIdle, int keepInterval, in
     }
 }
 
-bool base::isZeroAddr(int sa_family, const char * ip)
+bool base::isZeroAddr(int sa_family, std::string & ip)
 {
     if(sa_family == AF_INET)
     {
         struct in_addr addr;
-        inet_pton(sa_family, ip, &addr);
+        inet_pton(sa_family, ip.c_str(), &addr);
         return addr.s_addr == INADDR_ANY;
     }
     else if(sa_family == AF_INET6)
     {
         struct in6_addr addr;
-        inet_pton(sa_family, ip, &addr);
+        inet_pton(sa_family, ip.c_str(), &addr);
         for(int i = 0; i < 4; ++i)
         {
             if(addr.s6_addr32[i] != in6addr_any.s6_addr32[i])

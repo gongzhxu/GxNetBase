@@ -23,7 +23,7 @@ void setReuseAddr(int sockfd, bool on);
 void setReusePort(int sockfd, bool on);
 void setTcpNoDely(int sockfd, bool on);
 void setKeepAlive(int sockfd, bool on, int keepIdle = 60, int keepInterval = 5, int keepCount = 3);
-bool isZeroAddr(int sa_family, const char * ip);
+bool isZeroAddr(int sa_family, std::string & ip);
 std::string getHostMac();
 std::string getHostName();
 void getAddrInfo(std::vector<AddrInfo> & addrInfos, uint32_t port = 0, bool bIpv6 = false);

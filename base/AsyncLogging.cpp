@@ -4,7 +4,7 @@
 #include <chrono>
 
 #include "LogFile.h"
-#include "ConfigFileReader.h"
+#include "ConfigReader.h"
 #include "Buffer.h"
 
 #define MAX_LOG_BUF_SIZE 1024000
@@ -32,39 +32,36 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
     _print(true),
     _running(true)
 {
-    ConfigFileReader cfgFile(szCfgFile);
-    char * strBaseName = cfgFile.GetConfigName("Name");
-    if(strBaseName)
+    ConfigReader cfgFile(szCfgFile);
+    _basename = cfgFile.GetNameStr("Name");
+
+
+    std::string strLevel = cfgFile.GetNameStr("Level");
+    if(!strLevel.empty())
     {
-        _basename = strBaseName;
+        _level = static_cast<Logger::LogLevel>(atoi(strLevel.c_str()));
     }
 
-    char * strLevel = cfgFile.GetConfigName("Level");
-    if(strLevel)
+    std::string strRollSize = cfgFile.GetNameStr("RollSize");
+    if(!strRollSize.empty())
     {
-        _level = static_cast<Logger::LogLevel>(atoi(strLevel));
+        _rollSize = atol(strRollSize.c_str());
     }
 
-    char * strRollSize = cfgFile.GetConfigName("RollSize");
-    if(strRollSize)
+    std::string strFlushInterval = cfgFile.GetNameStr("FlushInterval");
+    if(!strFlushInterval.empty())
     {
-        _rollSize = atol(strRollSize);
-    }
-
-    char * strFlushInterval = cfgFile.GetConfigName("FlushInterval");
-    if(strFlushInterval)
-    {
-        _flushInterval = atoi(strFlushInterval);
+        _flushInterval = atoi(strFlushInterval.c_str());
         if(_flushInterval < DEF_FLUSHINTERVAL)
         {
             _flushInterval = DEF_FLUSHINTERVAL;
         }
     }
 
-    char * strPrint = cfgFile.GetConfigName("Print");
-    if(strFlushInterval)
+    std::string strPrint = cfgFile.GetNameStr("Print");
+    if(!strPrint.empty())
     {
-        _print = atoi(strPrint);
+        _print = atoi(strPrint.c_str());
     }
 
     _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));

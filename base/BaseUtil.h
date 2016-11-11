@@ -8,7 +8,7 @@
 #include "SocketOps.h"
 #include "StringOps.h"
 #include "CurrentThread.h"
-#include "ConfigFileReader.h"
+#include "ConfigReader.h"
 #include "TimeStamp.h"
 #include "TcpClient.h"
 #include "TcpServer.h"
@@ -17,7 +17,7 @@
 #include "ConnsMap.h"
 
 #define NOTUSED_ARG(v) ((void)v)		// used this to remove warning C4100, unreferenced parameter
-#define ASSERT_ABORT(c) if(!(c)) { LOG_FATAL("program abort"); exit(EXIT_FAILURE);}
+#define ASSERT_ABORT(c) if(!(c)) { LOG_FATAL("program abort"); abort();}
 #define MAX_VALUE(a,b) (a > b? a: b)
 #define MIN_VALUE(a,b) (a < b? a: b)
 
