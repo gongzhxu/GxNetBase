@@ -13,11 +13,11 @@ public:
 	ConfigReader(const char * filename);
 	~ConfigReader();
 
-    int GetNameInt(const char * name, int defvalue);
-    int GetNameInt(int id, const char * name, int defvalue);
+    int GetNameInt(const char * name, int defvalue = 0);
+    int GetNameInt(int id, const char * name, int defvalue = 0);
 
-    std::string GetNameStr(const char * name);
-    std::string GetNameStr(int id, const char * name);
+    std::string GetNameStr(const char * name, const char * defvalue = "");
+    std::string GetNameStr(int id, const char * name, const char * defvalue = "");
     int SetConfigValue(const char * name, const char * value);
 private:
     void _LoadFile();

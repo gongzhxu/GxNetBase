@@ -25,44 +25,19 @@ AsyncLogging::AsyncLogging(const std::string & basename,
 }
 
 AsyncLogging::AsyncLogging(const char * szCfgFile):
-    _basename("default"),
-    _level(Logger::INFO),
-    _rollSize(DEF_ROLLSIZE),
-    _flushInterval(DEF_FLUSHINTERVAL),
-    _print(true),
     _running(true)
 {
     ConfigReader cfgFile(szCfgFile);
-    _basename = cfgFile.GetNameStr("Name");
 
-
-    std::string strLevel = cfgFile.GetNameStr("Level");
-    if(!strLevel.empty())
+    _basename = cfgFile.GetNameStr("Name", "default");
+    _level = static_cast<Logger::LogLevel>(cfgFile.GetNameInt("Level", Logger::INFO));
+    _rollSize = cfgFile.GetNameInt("RollSize", DEF_ROLLSIZE);
+    _flushInterval = cfgFile.GetNameInt("FlushInterval", DEF_FLUSHINTERVAL);
+    if(_flushInterval < DEF_FLUSHINTERVAL)
     {
-        _level = static_cast<Logger::LogLevel>(atoi(strLevel.c_str()));
+        _flushInterval = DEF_FLUSHINTERVAL;
     }
-
-    std::string strRollSize = cfgFile.GetNameStr("RollSize");
-    if(!strRollSize.empty())
-    {
-        _rollSize = atol(strRollSize.c_str());
-    }
-
-    std::string strFlushInterval = cfgFile.GetNameStr("FlushInterval");
-    if(!strFlushInterval.empty())
-    {
-        _flushInterval = atoi(strFlushInterval.c_str());
-        if(_flushInterval < DEF_FLUSHINTERVAL)
-        {
-            _flushInterval = DEF_FLUSHINTERVAL;
-        }
-    }
-
-    std::string strPrint = cfgFile.GetNameStr("Print");
-    if(!strPrint.empty())
-    {
-        _print = atoi(strPrint.c_str());
-    }
+    _print = cfgFile.GetNameInt("Print", true);
 
     _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
 }

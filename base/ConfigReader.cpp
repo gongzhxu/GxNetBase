@@ -16,21 +16,6 @@ ConfigReader::~ConfigReader()
 {
 }
 
-std::string ConfigReader::GetNameStr(const char * name)
-{
-	std::string value;
-	{
-        std::unique_lock<std::mutex> lock(_mutex);
-        ConfigMap::iterator it = _cfgMap.find(name);
-        if (it != _cfgMap.end())
-        {
-            value = (char*)it->second.c_str();
-        }
-	}
-
-	return value;
-}
-
 int ConfigReader::GetNameInt(const char * name, int defvalue)
 {
     int value = defvalue;
@@ -55,11 +40,26 @@ int ConfigReader::GetNameInt(int id, const char * name, int defvalue)
     return value;
 }
 
-std::string ConfigReader::GetNameStr( int id, const char * name)
+std::string ConfigReader::GetNameStr(const char * name, const char * defvalue)
+{
+	std::string value = defvalue;
+	{
+        std::unique_lock<std::mutex> lock(_mutex);
+        ConfigMap::iterator it = _cfgMap.find(name);
+        if (it != _cfgMap.end())
+        {
+            value = (char*)it->second.c_str();
+        }
+	}
+
+	return value;
+}
+
+std::string ConfigReader::GetNameStr( int id, const char * name, const char * defvalue)
 {
     std::string strName;
     base::sprintfex(strName, "%s%d", name, id);
-    return GetNameStr(strName.c_str());
+    return GetNameStr(strName.c_str(), defvalue);
 }
 
 int ConfigReader::SetConfigValue(const char* name, const char * value)
