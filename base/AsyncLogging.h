@@ -10,18 +10,10 @@
 
 #include "Logger.h"
 
-#define DEF_ROLLSIZE 1024*1024*1024
-#define DEF_FLUSHINTERVAL 500
-
 class AsyncLogging
 {
 public:
     typedef std::list<LoggerPtr> LoggerList;
-    AsyncLogging(const std::string & basename,
-                 Logger::LogLevel level,
-                 size_t rollSize = DEF_ROLLSIZE,
-                 int flushInterval = DEF_FLUSHINTERVAL,
-                 bool print = true);
 
     AsyncLogging(const char * szCfgFile);
     ~AsyncLogging();
@@ -35,7 +27,8 @@ private:
     std::string _basename;
     Logger::LogLevel _level;
     size_t _rollSize;
-    uint32_t _flushInterval;
+    int _flushInterval;
+    int _autoRm;
     bool    _print;
     bool _running;
 

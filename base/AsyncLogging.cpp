@@ -7,22 +7,11 @@
 #include "ConfigReader.h"
 #include "Buffer.h"
 
+#define DEF_ROLLSIZE 1024*1024*1024
+#define DEF_FLUSHINTERVAL 500
+#define DEF_AUTORM 15
+#define DAYILY_SECONDS 24*60*60
 #define MAX_LOG_BUF_SIZE 1024000
-
-AsyncLogging::AsyncLogging(const std::string & basename,
-                           Logger::LogLevel level,
-                           size_t rollSize,
-                           int flushInterval,
-                           bool print):
-     _basename(basename),
-     _level(level),
-     _rollSize(rollSize),
-     _flushInterval(flushInterval),
-     _print(print),
-     _running(true)
-{
-    _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
-}
 
 AsyncLogging::AsyncLogging(const char * szCfgFile):
     _running(true)
@@ -37,6 +26,12 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
     {
         _flushInterval = DEF_FLUSHINTERVAL;
     }
+    _autoRm = cfgFile.GetNameInt("AutoRm", DEF_AUTORM)*DAYILY_SECONDS;//use second
+    if(_autoRm < 0)
+    {
+        _autoRm = DEF_AUTORM*DAYILY_SECONDS;
+    }
+
     _print = cfgFile.GetNameInt("Print", true);
 
     _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
@@ -61,7 +56,7 @@ void AsyncLogging::append(LoggerPtr && logger)
 
 void AsyncLogging::threadFunc()
 {
-    LogFile output(_basename, _rollSize, false);
+    LogFile output(_basename, _rollSize, _flushInterval, _autoRm);
 
     while(true)
     {

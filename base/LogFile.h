@@ -16,15 +16,17 @@ class LogFile
 public:
     LogFile(const std::string & basename,
             size_t rollSize,
-            int flushInterval = 3);
+            int flushInterval,
+            int autoRm);
 public:
     void append(const char * logline);
     void append(const char * logline, int len);
 
-    static char * getpwd( char * buf, int len);
 private:
-    bool rollFile();
+    void rollFile();
+    void rmFile();
     std::string getLogFileName(const std::string & basename, time_t & now);
+    std::string getLogPath(time_t & now);
 
     class File
     {
@@ -71,6 +73,7 @@ private:
     const std::string _basename;
     const size_t _rollSize;
     const int _flushInterval;
+    const int _autoRm;
     time_t _lastFlush;
     int _fileDay;
 

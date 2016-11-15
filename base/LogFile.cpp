@@ -3,14 +3,19 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include "FileOps.h"
+
 LogFile::LogFile(const std::string & basename,
                  size_t rollSize,
-                 int flushInterval):
+                 int flushInterval,
+                 int autoRm):
     _basename(basename),
     _rollSize(rollSize),
     _flushInterval(flushInterval),
+    _autoRm(autoRm),
     _lastFlush(0)
 {
+    rmFile();
     rollFile();
 }
 
@@ -24,7 +29,6 @@ void LogFile::append(const char * logline, int len)
     time_t now = ::time(NULL);
     struct tm * pTm = localtime(&now);
     int nowDay = pTm->tm_mday;
-
     if(len > 0)
     {
         _file->fwrite(logline, len);
@@ -32,6 +36,7 @@ void LogFile::append(const char * logline, int len)
 
     if(_file->getWrittenBytes() > _rollSize || _fileDay != nowDay)
     {
+        rmFile();
         rollFile();
     }
     else
@@ -44,62 +49,55 @@ void LogFile::append(const char * logline, int len)
     }
 }
 
-bool LogFile::rollFile()
+void LogFile::rollFile()
 {
-    time_t now;
+    time_t now = time(NULL);
     std::string filename = getLogFileName(_basename, now);
 
     _file.reset(new File(filename));
 
     struct tm * pTm = localtime(&now);
     _fileDay = pTm->tm_mday;
+}
 
-    return false;
+void LogFile::rmFile()
+{
+    time_t now = time(NULL) - _autoRm;
+    std::string logPath = getLogPath(now);
+
+    base::rmFile(logPath.c_str());
 }
 
 std::string LogFile::getLogFileName(const std::string & basename, time_t & now)
 {
     std::string filename;
-    filename.reserve(basename.size() + 128);
 
-    char szPath[PATH_MAX] = {0};
-    filename = getpwd(szPath, sizeof(szPath) - 1);
-    filename += "log/";
+    filename = base::getPwd() += "log/";
     mkdir(filename.c_str(), 0744);
 
     char timebuf[32] = {0};
     struct tm tm;
-    now = time(NULL);
     localtime_r(&now, &tm);
 
     strftime(timebuf, sizeof(timebuf), "%Y-%m-%d/", &tm);
     filename += timebuf;
     mkdir(filename.c_str(), 0744);
-
     strftime(timebuf, sizeof(timebuf), ".%Y%m%d-%H%M%S", &tm);
-    filename += basename;
-    filename += timebuf;
-    filename += ".log";
 
+    filename += basename + timebuf + ".log";
     return filename;
 }
 
-char * LogFile::getpwd( char * buf, int len)
+std::string LogFile::getLogPath(time_t & now)
 {
-    int i;
-    int rslt = readlink("/proc/self/exe", buf, len - 1);
-    if (rslt < 0 || (rslt >= len - 1))
-    {
-        return NULL;
-    }
-    buf[rslt] = '\0';
-    for (i = rslt; i >= 0; i--)
-    {
-        if (buf[i] == '/')
-        {
-            buf[i + 1] = '\0';
-            break;
-        }
-    }
-    return buf;
+    std::string logPath;
+
+    char timebuf[32] = {0};
+    struct tm tm;
+    localtime_r(&now, &tm);
+    strftime(timebuf, sizeof(timebuf), "%Y-%m-%d/", &tm);
+
+    logPath = base::getPwd() + "log/" + timebuf;
+    return logPath;
 }
+

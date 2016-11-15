@@ -7,6 +7,7 @@
 #include "EventLoopThreadPool.h"
 #include "SocketOps.h"
 #include "StringOps.h"
+#include "FileOps.h"
 #include "CurrentThread.h"
 #include "ConfigReader.h"
 #include "TimeStamp.h"
