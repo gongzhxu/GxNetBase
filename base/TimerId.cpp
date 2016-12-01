@@ -27,9 +27,9 @@ TimerId * TimerId::createTimer(EventLoop * loop, const struct timeval & tv, cons
     return pTimer;
 }
 
-void TimerId::deleteTimer(TimerId * pTimer)
+void TimerId::deleteTimer(TimerId * timer)
 {
-    pTimer->_loop->runInLoop(std::bind(&TimerId::stopTimer, pTimer));
+    timer->_loop->runInLoop(std::bind(&TimerId::stopTimer, timer));
 }
 
 void TimerId::startTimer()

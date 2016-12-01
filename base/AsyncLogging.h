@@ -24,7 +24,8 @@ private:
     void threadFunc();
 
 private:
-    std::string _basename;
+    std::string _logFolder;
+    std::string _baseName;
     Logger::LogLevel _level;
     size_t _rollSize;
     int _flushInterval;

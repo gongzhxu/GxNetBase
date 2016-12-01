@@ -14,7 +14,8 @@
 class LogFile
 {
 public:
-    LogFile(const std::string & basename,
+    LogFile(const std::string & logFolder,
+            const std::string & baseName,
             size_t rollSize,
             int flushInterval,
             int autoRm);
@@ -23,10 +24,10 @@ public:
     void append(const char * logline, int len);
 
 private:
-    void rollFile();
-    void rmFile();
-    std::string getLogFileName(const std::string & basename, time_t & now);
-    std::string getLogPath(time_t & now);
+    void rollFile(const time_t & time);
+    void rmFile(const time_t & time);
+    std::string getLogFileName(const std::string & basename, const time_t & time);
+    std::string getLogPath(const time_t & time);
 
     class File
     {
@@ -52,7 +53,7 @@ private:
 
         size_t fwrite(const char * logline, const size_t len)
         {
-            ::freopen(_filename.c_str(), "a", _fp);
+            _fp = ::freopen(_filename.c_str(), "a", _fp);
             _writtenBytes += len;
             return ::fwrite(logline, 1, len, _fp);
         }
@@ -70,7 +71,8 @@ private:
     };
 
 private:
-    const std::string _basename;
+    const std::string _logFolder;
+    const std::string _baseName;
     const size_t _rollSize;
     const int _flushInterval;
     const int _autoRm;

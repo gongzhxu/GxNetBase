@@ -21,7 +21,7 @@ private:
     ~TimerId();
 public:
     static TimerId * createTimer(EventLoop * loop, const struct timeval & tv, const Functor & cb, int type);
-    static void deleteTimer(TimerId * pTimer);
+    static void deleteTimer(TimerId * timer);
 private:
     void startTimer();
     void onTimer();

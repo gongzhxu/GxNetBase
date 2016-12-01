@@ -110,6 +110,11 @@ TimerId * EventLoop::runEvery(const struct timeval & tv, const Functor & cb)
     return TimerId::createTimer(this, tv, cb, TIMER_PERSIST);;
 }
 
+void EventLoop::runEveryStop(TimerId * timer)
+{
+    return TimerId::deleteTimer(timer);
+}
+
 void EventLoop::addSignal(evutil_socket_t x, event_callback_fn cb, void * arg)
 {
     struct event * se = evsignal_new(_base, x, cb, arg);

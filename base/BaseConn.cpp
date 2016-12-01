@@ -143,7 +143,7 @@ void BaseConn::closeInLoop()
     uint16_t port;
 
     base::getPeerAddr(_sockfd, ip, port);
-    LOG_DEBUG("new conn %s:%d this=%p, fd=%d", ip.c_str(), port, this, _sockfd);
+    LOG_DEBUG("close conn %s:%d this=%p, fd=%d", ip.c_str(), port, this, _sockfd);
 
     onClose();
 

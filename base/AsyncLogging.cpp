@@ -8,7 +8,7 @@
 #include "Buffer.h"
 
 #define DEF_ROLLSIZE 1024*1024*1024
-#define DEF_FLUSHINTERVAL 500
+#define DEF_FLUSHINTERVAL 1000
 #define DEF_AUTORM 15
 #define DAYILY_SECONDS 24*60*60
 #define MAX_LOG_BUF_SIZE 1024000
@@ -17,8 +17,8 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
     _running(true)
 {
     ConfigReader cfgFile(szCfgFile);
-
-    _basename = cfgFile.GetNameStr("Name", "default");
+    _logFolder = cfgFile.GetNameStr("Folder", "log");
+    _baseName = cfgFile.GetNameStr("Name", "default");
     _level = static_cast<Logger::LogLevel>(cfgFile.GetNameInt("Level", Logger::INFO));
     _rollSize = cfgFile.GetNameInt("RollSize", DEF_ROLLSIZE);
     _flushInterval = cfgFile.GetNameInt("FlushInterval", DEF_FLUSHINTERVAL);
@@ -56,7 +56,7 @@ void AsyncLogging::append(LoggerPtr && logger)
 
 void AsyncLogging::threadFunc()
 {
-    LogFile output(_basename, _rollSize, _flushInterval, _autoRm);
+    LogFile output(_logFolder, _baseName, _rollSize, (_flushInterval+1000)/1000, _autoRm);
 
     while(true)
     {

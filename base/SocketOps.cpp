@@ -136,7 +136,6 @@ bool base::isZeroAddr(int sa_family, std::string & ip)
     return false;
 }
 
-
 std::string base::getHostMac()
 {
     struct ifaddrs * ifaddrsVar = nullptr;
