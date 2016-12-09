@@ -96,19 +96,19 @@ void BaseConn::onEvent(short what)
 {
     if(what & BEV_EVENT_CONNECTED)
     {
-        LOG_DEBUG("connect:%s", strerror(errno));
+        LOG_DEBUG("connect:%d, %d, %s", what, errno, strerror(errno));
         connectInLoop();
 
     }
     else  if(what & (BEV_EVENT_READING | BEV_EVENT_WRITING | BEV_EVENT_EOF | BEV_EVENT_ERROR))
     {
-        LOG_DEBUG("error:%s", strerror(errno));
+        LOG_DEBUG("error:%d, %d, %s", what, errno, strerror(errno));
         closeInLoop();
     }
     else
     {
         //can't do here
-        LOG_ERROR("unknown error:%s", strerror(errno));
+        LOG_ERROR("unknown error:%d, %d, %s", what, errno, strerror(errno));
         abort();
     }
 }

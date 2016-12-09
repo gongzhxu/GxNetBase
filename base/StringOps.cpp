@@ -11,7 +11,7 @@ void base::sprintfex(std::string & str, const char * format, ...)
 
     str.resize(128);
     len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist1);
-    if(static_cast<size_t>(len) > str.size())
+    if(static_cast<size_t>(len) >= str.size())
     {
         str.resize(len+1);
 
