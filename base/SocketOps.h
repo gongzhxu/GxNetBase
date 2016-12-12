@@ -22,7 +22,7 @@ void getPeerAddr(int sockfd, std::string & ip, uint16_t & port);
 void setReuseAddr(int sockfd, bool on);
 void setReusePort(int sockfd, bool on);
 void setTcpNoDely(int sockfd, bool on);
-void setKeepAlive(int sockfd, bool on, int keepIdle = 60, int keepInterval = 5, int keepCount = 3);
+void setKeepAlive(int sockfd, bool on, int keepIdle = 60, int keepInterval = 10, int keepCount = 6);
 bool isZeroAddr(int sa_family, std::string & ip);
 std::string getHostMac();
 std::string getHostName();

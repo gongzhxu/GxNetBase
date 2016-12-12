@@ -137,6 +137,26 @@ bool RedisProxyConn::exists(const char * key)
     return 0 == ret_value? false: true;
 }
 
+std::string RedisProxyConn::get(const char * key)
+{
+    std::string ret_value;
+
+    redisReply * reply = commandv("GET %s", key);
+	if(!reply)
+    {
+		release();
+		return ret_value;
+	}
+
+	if(reply->type == REDIS_REPLY_STRING)
+    {
+		ret_value.append(reply->str, reply->len);
+	}
+
+	freeReplyObject(reply);
+	return ret_value;
+}
+
 bool RedisProxyConn::mget(const KeyList & keys, ValueMap & retValue)
 {
     assert(!keys.empty());

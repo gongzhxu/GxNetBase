@@ -35,6 +35,7 @@ public:
     redisReply * commandv(const char * format, ...);
 
     bool exists(const char * key);
+    std::string get(const char * key);
     bool mget(const KeyList & keys, ValueMap & retValue);
     bool hexists(const char * key, const char * item);
     bool hdel(const char * key, const ItemList & iterms);
