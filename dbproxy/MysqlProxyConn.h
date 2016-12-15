@@ -5,6 +5,7 @@
 #include <mysql/mysql.h>
 
 #define ROW(nIndex) ((nIndex < nFields && row[nIndex])? row[nIndex]: "")
+#define MYSQLLEN(nIndex) ((nIndex < nFields && len[nIndex])? len[nIndex]: 0)
 
 struct MysqlConnInfo
 {
