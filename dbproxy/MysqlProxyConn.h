@@ -25,13 +25,36 @@ public:
         _res = mysql_store_result(mysql);
     }
 
+    MYSQL_RES * next()
+    {
+        if(_res)
+        {
+            mysql_free_result(_res);
+            _res = nullptr;
+        }
+
+        if(!mysql_next_result(_mysql))
+        {
+            _res = mysql_store_result(_mysql);
+        }
+
+        return _res;
+    }
+
     ~AutoMysqlRes()
     {
-        mysql_free_result(_res);
+        if(_res)
+        {
+            mysql_free_result(_res);
+        }
+
         while(!mysql_next_result(_mysql))
         {
             _res = mysql_store_result(_mysql);
-            mysql_free_result(_res);
+            if(_res)
+            {
+                mysql_free_result(_res);
+            }
         }
     }
 
