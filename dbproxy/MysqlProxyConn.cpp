@@ -48,8 +48,6 @@ bool MysqlProxyConn::init()
         return false;
     }
 
-
-
 	_bConnect = true;
 	LOG_INFO("connect mysql successed");
 	return true;
@@ -66,20 +64,20 @@ void MysqlProxyConn::release()
 
 bool MysqlProxyConn::command(const char * szCmd, int nLength)
 {
-#if 0
+#if 1
     LOG_DEBUG("mysql cmd:%s, %d", szCmd, nLength);
 #else
      LOG_INFO("mysql cmd:%s, %d", szCmd, nLength);
 #endif
 
-    int nRet = mysql_real_query(&_mysql, szCmd,nLength);
+    int nRet = mysql_real_query(&_mysql, szCmd, nLength);
 	if(nRet != DBRESULT_SUCCESS)
     {
         unsigned int nErr = mysql_errno(&_mysql);
         LOG_WARN("mysql query error:%d, %d", nRet, nErr);
         if(nErr == CR_SERVER_GONE_ERROR ||
 			nErr == CR_SERVER_LOST ||
-			nErr == CR_CONN_HOST_ERROR )
+			nErr == CR_CONN_HOST_ERROR)
         {
 
 			LOG_INFO("mysql connection disconnect");
