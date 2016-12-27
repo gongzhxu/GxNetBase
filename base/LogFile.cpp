@@ -79,7 +79,7 @@ std::string LogFile::getLogFileName(const std::string & basename, const time_t &
     std::string filename;
 
     filename = base::getPwd() + _logFolder + "/";
-    mkdir(filename.c_str(), 0744);
+    mkdir(filename.c_str(), 0755);
 
     char timebuf[32] = {0};
     struct tm tm;
@@ -87,7 +87,7 @@ std::string LogFile::getLogFileName(const std::string & basename, const time_t &
 
     strftime(timebuf, sizeof(timebuf), "%Y-%m-%d/", &tm);
     filename += timebuf;
-    mkdir(filename.c_str(), 0744);
+    mkdir(filename.c_str(), 0755);
     strftime(timebuf, sizeof(timebuf), ".%Y%m%d-%H%M%S", &tm);
 
     filename += basename + timebuf + ".log";
