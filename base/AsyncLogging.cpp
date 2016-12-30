@@ -1,6 +1,5 @@
 #include "AsyncLogging.h"
 
-#include <assert.h>
 #include <chrono>
 
 #include "LogFile.h"
@@ -13,10 +12,11 @@
 #define DAYILY_SECONDS 24*60*60
 #define MAX_LOG_BUF_SIZE 1024000
 
-AsyncLogging::AsyncLogging(const char * szCfgFile):
+AsyncLogging::AsyncLogging(const char * fileName):
     _running(true)
 {
-    ConfigReader cfgFile(szCfgFile);
+    //read the configuration item from config file
+    ConfigReader cfgFile(fileName);
     _logFolder = cfgFile.GetNameStr("Folder", "log");
     _baseName = cfgFile.GetNameStr("Name", "default");
     _level = static_cast<Logger::LogLevel>(cfgFile.GetNameInt("Level", Logger::INFO));
@@ -34,11 +34,13 @@ AsyncLogging::AsyncLogging(const char * szCfgFile):
 
     _print = cfgFile.GetNameInt("Print", true);
 
+    //start the thread
     _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
 }
 
 AsyncLogging::~AsyncLogging()
 {
+    //stop the running thread
     _running = false;
     _cond.notify_one();
     _thread.join();
@@ -56,6 +58,7 @@ void AsyncLogging::append(LoggerPtr && logger)
 
 void AsyncLogging::threadFunc()
 {
+    //make LogFile object to handle the logger
     LogFile output(_logFolder, _baseName, _rollSize, (_flushInterval+1000)/1000, _autoRm);
 
     while(true)
@@ -81,14 +84,13 @@ void AsyncLogging::threadFunc()
         }
 
 
-        Buffer outputBuf;
-        Buffer printBuf;
-        char data[Logger::MAX_LOG_LEN];
+        Buffer outputBuf; // the file log buffer
+        Buffer printBuf; // the screen print buffer
+        char data[Logger::MAX_LOG_LEN] = {0};
 
-        for(auto it = loggers.begin(); it != loggers.end(); ++it)
+        for(auto it = loggers.begin(); it != loggers.end();)
         {
-            LoggerPtr pLogger = *it;
-
+            LoggerPtr pLogger = *(it++);
             size_t len = pLogger->format(data, Logger::MAX_LOG_LEN);
 
             outputBuf.append(data, len);
@@ -97,28 +99,18 @@ void AsyncLogging::threadFunc()
                 printBuf.append(data, len);
             }
 
-
-            if(outputBuf.size() > MAX_LOG_BUF_SIZE)
+            //write the log buffer to destination
+            if(outputBuf.size() > MAX_LOG_BUF_SIZE || it == loggers.end())
             {
                 output.append(outputBuf.data(), outputBuf.size());
                 outputBuf.clear();
             }
 
-            if(printBuf.size() > MAX_LOG_BUF_SIZE)
+            if(printBuf.size() > MAX_LOG_BUF_SIZE || it == loggers.end())
             {
-                ::fwrite(printBuf.data(), 1, printBuf.size(), stdout);
+                ::fwrite(printBuf.data(), sizeof(char), printBuf.size(), stdout);
                 printBuf.clear();
             }
-        }
-
-        if(!outputBuf.empty())
-        {
-            output.append(outputBuf.data(), outputBuf.size());
-        }
-
-        if(!printBuf.empty())
-        {
-            ::fwrite(printBuf.data(), 1, printBuf.size(), stdout);
         }
     }
 }

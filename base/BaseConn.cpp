@@ -14,7 +14,6 @@ BaseConn::BaseConn(EventLoop * loop):
     _bShutdownd(false),
     _sockfd(-1),
     _bufev(nullptr),
-    _inputBuffer(nullptr),
     _tie(nullptr)
 {
     LOG_DEBUG("Create Conn:%p", this);
@@ -30,35 +29,35 @@ void BaseConn::sendPdu(const std::shared_ptr<void> & pdu)
 {
     if(!connected())
     {
-        LOG_WARN("not connected");
+        LOG_WARN("the conn not connected");
         return;
     }
 
     _loop->runInLoop(std::bind(&BaseConn::sendPduInLoop, shared_from_this(), pdu));
 }
 
-int BaseConn::readInput()
+bool BaseConn::read(void * data, size_t datlen)
 {
     _loop->assertInLoopThread();
-    assert(_bufev != nullptr && _inputBuffer != nullptr);
+    assert(_bufev != nullptr);
 
-    int ret = bufferevent_read_buffer(_bufev, _inputBuffer);
-    if(ret != 0)
+    struct evbuffer * inputBuffer = bufferevent_get_input(_bufev);
+    if(!inputBuffer)
     {
-        LOG_INFO("read error:%s", strerror(errno));
+        LOG_ERROR("read error:%s", strerror(errno));
         close();
-        return -1;
+        return false;
     }
 
-    return evbuffer_get_length(_inputBuffer);
-}
+    int  inputLen = evbuffer_get_length(inputBuffer);
+    if(inputLen < static_cast<int>(datlen))
+    {
+        //input buffer not enough
+        return false;
+    }
 
-int BaseConn::readbuf(void *data, size_t datlen)
-{
-    _loop->assertInLoopThread();
-    assert(_bufev != nullptr && _inputBuffer != nullptr);
-
-    return evbuffer_remove(_inputBuffer, data, datlen);
+    ASSERT_ABORT(bufferevent_read(_bufev, data, datlen) == datlen);
+    return true;
 }
 
 void BaseConn::close()
@@ -156,12 +155,6 @@ void BaseConn::closeInLoop()
         _bufev = nullptr;
     }
 
-    if(_inputBuffer)
-    {
-        evbuffer_free(_inputBuffer);
-        _inputBuffer = nullptr;
-    }
-
     //you can use weakptr,but it too complicate, so you have to free manual
     setConnectCallback(ConnCallback());
     setCloseCallback(ConnCallback());
@@ -184,9 +177,12 @@ void BaseConn::sendInLoop(const void *data, size_t datlen)
     {
         return;
     }
-    assert(_bufev != nullptr && _inputBuffer != nullptr);
-    struct evbuffer * buf = bufferevent_get_output(_bufev);
-    ASSERT_ABORT(evbuffer_add(buf, data, datlen) == 0);
+    assert(_bufev != nullptr);
+    if(bufferevent_write(_bufev, data, datlen) != 0)
+    {
+        LOG_ERROR("read error:%s", strerror(errno));
+        close();
+    }
 }
 
 void BaseConn::sendInLoop(const void *data1, size_t datlen1, const void *data2, size_t datlen2)
@@ -197,17 +193,19 @@ void BaseConn::sendInLoop(const void *data1, size_t datlen1, const void *data2, 
         return;
     }
 
-    assert(_bufev != nullptr && _inputBuffer != nullptr);
-    struct evbuffer * buf = bufferevent_get_output(_bufev);
-    ASSERT_ABORT(evbuffer_expand(buf, datlen1+datlen2) == 0);
-    ASSERT_ABORT(evbuffer_add(buf, data1, datlen1) == 0);
-    ASSERT_ABORT(evbuffer_add(buf, data2, datlen2) == 0);
+    assert(_bufev != nullptr);
+    if(bufferevent_write(_bufev, data1, datlen1) != 0 ||
+        bufferevent_write(_bufev, data2, datlen2) != 0)
+    {
+        LOG_ERROR("read error:%s", strerror(errno));
+        close();
+    }
 }
 
 void BaseConn::BuildAccept()
 {
     assert(_loop->isInLoopThread());
-    assert(_bufev == nullptr && _inputBuffer == nullptr);
+    assert(_bufev == nullptr);
 
     do
     {
@@ -215,13 +213,6 @@ void BaseConn::BuildAccept()
         if(_bufev == nullptr)
         {
             LOG_ERROR("memory error on  bufferevent_socket_new");
-            break;
-        }
-
-        _inputBuffer = evbuffer_new();
-        if(_inputBuffer == nullptr)
-        {
-            LOG_ERROR("memory error on  evbuffer_new");
             break;
         }
 
@@ -245,20 +236,13 @@ void BaseConn::BuildAccept()
 void BaseConn::BuildConnect()
 {
     assert(_loop->isInLoopThread());
-    assert(_bufev == nullptr && _inputBuffer == nullptr);
+    assert(_bufev == nullptr);
     do
     {
         _bufev = bufferevent_socket_new(_loop->get_event(), -1, BEV_OPT_CLOSE_ON_FREE);
         if(_bufev == nullptr)
         {
             LOG_ERROR("memory error on  bufferevent_socket_new");
-            break;
-        }
-
-        _inputBuffer = evbuffer_new();
-        if(_inputBuffer == nullptr)
-        {
-            LOG_ERROR("memory error on  evbuffer_new");
             break;
         }
 
@@ -271,7 +255,7 @@ void BaseConn::BuildConnect()
             LOG_ERROR("bufferevent_enable error:%d", ret);
             break;
         }
-        //please use async resolve the hostname
+        //FIXME: please use async resolve the hostname
         AddrInfo addrInfo = _connInfo.getNextAddrInfo();
         LOG_INFO("begin connect sa_family=%d, ip=%s, port=%d", addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
         ret = bufferevent_socket_connect_hostname(_bufev, nullptr, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());

@@ -15,7 +15,7 @@ class AsyncLogging
 public:
     typedef std::list<LoggerPtr> LoggerList;
 
-    AsyncLogging(const char * szCfgFile);
+    AsyncLogging(const char * fileName);
     ~AsyncLogging();
 public:
     void append(LoggerPtr && logger);
@@ -24,20 +24,20 @@ private:
     void threadFunc();
 
 private:
-    std::string _logFolder;
-    std::string _baseName;
-    Logger::LogLevel _level;
-    size_t _rollSize;
-    int _flushInterval;
-    int _autoRm;
-    bool    _print;
-    bool _running;
+    std::string _logFolder; // log folder
+    std::string _baseName; // log prefix name
+    Logger::LogLevel _level; // log level
+    size_t _rollSize; // roll size(bytes)
+    int _flushInterval; // flush interval
+    int _autoRm; // auto remove time(days)
+    bool    _print; // print or not
+    bool _running; // just a flag indicate the thread is running
 
     std::thread _thread;
     std::mutex _mutex;
     std::condition_variable _cond;
 
-    LoggerList _loggers;
+    LoggerList _loggers; // logger list
 };
 
 #endif // _ASYNC_LOGGING_H

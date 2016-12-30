@@ -28,9 +28,7 @@ public:
 public:
     void sendPdu(const std::shared_ptr<void> & pdu);
 
-    int readInput();
-    int readbuf(void *data, size_t datlen);
-
+    bool read(void * data, size_t datlen);
     void close();
     void shutdown();
 
@@ -70,20 +68,19 @@ private:
     void setConnectCallback(const ConnCallback & cb) { _connect_cb = cb; }
     void setCloseCallback(const ConnCallback & cb) { _close_cb = cb; }
 private:
-    EventLoop * _loop;
-    bool _bConnected;
-    bool _bClosed;
-    bool _bShutdownd;
-    evutil_socket_t _sockfd;
-    ConnInfo _connInfo;
+    EventLoop * _loop; // the event loop
+    bool _bConnected; // the connect flag
+    bool _bClosed; // the close flag
+    bool _bShutdownd; // the shutdown flag
+    evutil_socket_t _sockfd; // the socket fd
+    ConnInfo _connInfo; // the connection infomation
 
-    struct bufferevent * _bufev;
-    struct evbuffer * _inputBuffer;
+    struct bufferevent * _bufev; // the libevent buffer event
 
-    ConnCallback _connect_cb;
-    ConnCallback _close_cb;
+    ConnCallback _connect_cb; // register the connet callback
+    ConnCallback _close_cb; // register the close callback
 
-    //tie 'this', so can't free manual
+    //tie 'this', so can't free object manual
     std::shared_ptr<void> _tie;
 };
 
