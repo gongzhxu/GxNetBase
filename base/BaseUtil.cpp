@@ -21,6 +21,7 @@ void writeinfo(uint32_t id, const char * hostname)
 
 AsyncLogging & getLogger()
 {
+    //log instance
     static AsyncLogging log("log.conf");
     return log;
 }

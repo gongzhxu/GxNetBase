@@ -8,6 +8,9 @@ class Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 #define MakeBufferPtr std::make_shared<Buffer>
 
+/*
+   Buffer: extensible buffer block
+ */
 class Buffer
 {
 public:

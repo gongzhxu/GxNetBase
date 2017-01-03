@@ -29,9 +29,9 @@ public:
     const std::string & ip() const { return _ip;}
     uint32_t port() const { return _port; }
 private:
-    int _sa_family;
-    std::string _ip;
-    uint32_t _port;
+    int _sa_family; // the address family type(IPV4 or IPV6)
+    std::string _ip; // the ip address
+    uint32_t _port; // the net port
 };
 
 class ConnInfo:public std::less_equal<ConnInfo>
@@ -62,8 +62,6 @@ public:
         _addrinfo.insert(_addrinfo.end(), ci._addrinfo.begin(), ci._addrinfo.end());
         return *this;
     }
-
-
 
     uint32_t id() const { return _id; }
     const std::string & hostname() const { return _hostname; }

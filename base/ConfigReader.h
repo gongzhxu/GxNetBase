@@ -7,6 +7,9 @@
 
 typedef std::map<std::string, std::string> ConfigMap;
 
+/*
+    configure reader
+ */
 class ConfigReader
 {
 public:

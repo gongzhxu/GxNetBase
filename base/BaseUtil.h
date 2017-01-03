@@ -43,7 +43,17 @@
 
 #endif // 0
 
+/*
+  write the instance info to the server.pid file
+
+  @param id the server id
+  @return hostname the server hostname
+*/
 void writeinfo(uint32_t id, const char * hostname);
+
+/*
+  get the log instance
+*/
 AsyncLogging & getLogger();
 
 
