@@ -516,3 +516,33 @@ long RedisProxyConn::incrby(const char * key, long value)
     freeReplyObject(reply);
     return ret_value;
 }
+
+bool RedisProxyConn::expire_day(const char * key, int days)
+{
+    redisReply * reply = commandv("EXPIRE %s %lu", key, 86400*days);
+    if(!reply)
+    {
+        release();
+        return false;
+    }
+
+    long ret_value = reply->integer;
+
+    freeReplyObject(reply);
+    return ret_value;
+}
+
+bool RedisProxyConn::persist(const char * key)
+{
+    redisReply * reply = commandv("PERSIST %s", key);
+    if(!reply)
+    {
+        release();
+        return false;
+    }
+
+    long ret_value = reply->integer;
+
+    freeReplyObject(reply);
+    return ret_value;
+}

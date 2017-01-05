@@ -50,6 +50,8 @@ public:
     bool sismember(const char * key, long item);
     long incr(const char * key);
     long incrby(const char * key, long value);
+    bool expire_day(const char * key, int days);
+    bool persist(const char * key);
 private:
     std::string           _addrs;
     redisClusterContext * _pContext;
