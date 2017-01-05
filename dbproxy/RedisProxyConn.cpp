@@ -33,13 +33,13 @@ bool RedisProxyConn::init()
 		}
 		else
 		{
-			LOG_INFO("redisConnect failed");
+			LOG_INFO("redisConnect failed!!!");
 		}
 
 		return false;
     }
 
-    LOG_INFO("connect redis success");
+    LOG_INFO("connect redis success!!!");
     return true;
 }
 
@@ -47,7 +47,7 @@ void RedisProxyConn::release()
 {
     if(_pContext)
     {
-        LOG_INFO("redisCommand failed:%s", _pContext->errstr);
+        LOG_DEBUG("redisCommand failed:%s", _pContext->errstr);
         redisClusterFree(_pContext);
         _pContext = nullptr;
     }
@@ -67,7 +67,7 @@ bool RedisProxyConn::command(const char *format, ...)
         va_start(arglist, format);
         char szCmd[1024] = {0};
         vsnprintf(szCmd, 1024, format, arglist);
-        LOG_INFO("szCmd:%s", szCmd);
+        LOG_DEBUG("szCmd:%s", szCmd);
         va_end(arglist);
     }
 #endif // 1
@@ -105,7 +105,7 @@ redisReply * RedisProxyConn::commandv(const char * format, ...)
         va_start(arglist, format);
         char szCmd[1024] = {0};
         vsnprintf(szCmd, 1024, format, arglist);
-        LOG_INFO("szCmd:%s", szCmd);
+        LOG_DEBUG("szCmd:%s", szCmd);
         va_end(arglist);
     }
 #endif // 1

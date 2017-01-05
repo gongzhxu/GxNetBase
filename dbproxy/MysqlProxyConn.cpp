@@ -49,7 +49,7 @@ bool MysqlProxyConn::init()
     }
 
 	_bConnect = true;
-	LOG_INFO("connect mysql successed");
+	LOG_INFO("connect mysql successed!!!");
 	return true;
 }
 
@@ -80,7 +80,7 @@ bool MysqlProxyConn::command(const char * szCmd, int nLength)
 			nErr == CR_CONN_HOST_ERROR)
         {
 
-			LOG_INFO("mysql connection disconnect");
+			LOG_INFO("mysql connection disconnect!!!");
 			release();
 			if(init())
             {
