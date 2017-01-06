@@ -45,11 +45,7 @@ build(){
 		mkdir /usr/local/include/$PROJECT
 	fi
 	cp -R $PROJECT/*.h /usr/local/include/$PROJECT
-	
-	if [ ! -d /usr/local/lib/$PROJECT ]; then
-		mkdir /usr/local/lib/$PROJECT
-	fi
-	cp -R $PROJECT/*.a /usr/local/lib/$PROJECT
+	cp -R $PROJECT/*.a /usr/local/lib
 }
 
 
