@@ -13,35 +13,6 @@ check_env(){
     fi
 }
 	
-build_base(){
-    PROJECT=base
-
-    cd $PROJECT
-	
-	BUILDTYPE=Release
-	if  [ "$1"x = "Debug"x ]; then
-		BUILDTYPE=Debug
-	fi	
-
-	if [ ! -d $BUILDTYPE ]; then
-		mkdir $BUILDTYPE
-	fi
-	
-	cd $BUILDTYPE
-			
-    cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE -B. -H../
-   
-    make
-    if [ $? -eq 0 ]; then
-        echo "make $PROJECT successed";
-    else
-        echo "make $PROJECT failed";
-        exit;
-    fi
-	
-	cd ../../
-}
-
 build(){
     PROJECT=$1
 
@@ -68,7 +39,17 @@ build(){
         exit;
     fi
 
-    cd ../../
+	cd ../../
+	
+	if [ ! -d /usr/local/include/$PROJECT ]; then
+		mkdir /usr/local/include/$PROJECT
+	fi
+	cp -R $PROJECT/*.h /usr/local/include/$PROJECT
+	
+	if [ ! -d /usr/local/lib/$PROJECT ]; then
+		mkdir /usr/local/lib/$PROJECT
+	fi
+	cp -R $PROJECT/*.a /usr/local/lib/$PROJECT
 }
 
 
