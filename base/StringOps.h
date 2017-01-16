@@ -34,6 +34,7 @@ std::string toString(const T data)
     return szData;
 }
 
+std::string utf8_substr(const std::string & str, size_t pos, size_t len);
 }
 
 #endif // _STRING_OPT_H_

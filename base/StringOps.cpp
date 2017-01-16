@@ -55,6 +55,42 @@ void base::splitex(const std::string & str, const std::string delim, std::vector
     }
 }
 
+std::string base::utf8_substr(const std::string & str, size_t pos, size_t len)
+{
+    if(len == 0)
+    {
+        return "";
+    }
+
+    size_t i, ix, q, min = std::string::npos, max = std::string::npos;
+    for(q = 0, i = 0, ix = str.length(); i < ix; i++, q++)
+    {
+        if(q == pos)
+        {
+            min = i;
+        }
+
+        if(q <= pos + len || len == std::string::npos)
+        {
+            max = i;
+        }
+
+        unsigned char c = (unsigned char)str[i];
+
+        if (c > 0 && c <= 127) i += 0;
+        else if ((c & 0xE0) == 0xC0) i += 1;
+        else if ((c & 0xF0) == 0xE0) i += 2;
+        else if ((c & 0xF8) == 0xF0) i += 3;
+        else if ((c & 0xFC) == 0xF8) i += 4;
+        else return "";
+    }
+
+    if(q <= pos + len || len == std::string::npos) { max = i; }
+    if(min == std::string::npos || max == std::string::npos) { return "";}
+
+    return str.substr(min, max - min);
+}
+
 
 /*
 const char * base::getformat(uint8_t)
