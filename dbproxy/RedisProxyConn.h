@@ -48,6 +48,7 @@ public:
     bool smembers(const char * key, ValueList & retValue);
     bool smembers(const char * key, LONGValueList & retValue);
     bool sismember(const char * key, long item);
+    long scard(const char * key);
     long incr(const char * key);
     long incrby(const char * key, long value);
     bool expire_day(const char * key, int days);

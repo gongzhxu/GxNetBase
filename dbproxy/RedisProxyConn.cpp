@@ -487,6 +487,21 @@ bool RedisProxyConn::sismember(const char * key, long item)
     return 0 == ret_value? false: true;
 }
 
+long RedisProxyConn::scard(const char * key)
+{
+    redisReply * reply = commandv("SCARD %s", key);
+    if(!reply)
+    {
+        release();
+        return 0;
+    }
+
+    long ret_value = reply->integer;
+    freeReplyObject(reply);
+
+    return ret_value;
+}
+
 long RedisProxyConn::incr(const char * key)
 {
     redisReply * reply = commandv("INCR %s", key);

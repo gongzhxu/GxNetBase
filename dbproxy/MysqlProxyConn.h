@@ -78,7 +78,8 @@ public:
     MYSQL * mysql() { return &_mysql; }
     int num() { return _num; }
 
-
+    std::string escape(const std::string & from);
+    bool escape(const std::string & from, std::string & to);
     bool command(const char * szCmd, int nLength);
     bool commit();
 private:

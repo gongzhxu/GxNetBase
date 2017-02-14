@@ -62,6 +62,46 @@ void MysqlProxyConn::release()
     }
 }
 
+std::string MysqlProxyConn::escape(const std::string & from)
+{
+    std::string to;
+    to.resize(from.size()*2+2);
+    long len= mysql_real_escape_string(&_mysql, const_cast<char *>(to.c_str()), from.c_str(), from.size());
+    if(len >= 0)
+    {
+        return to.substr(0, len);
+    }
+    else
+    {
+        return "";
+    }
+}
+
+bool MysqlProxyConn::escape(const std::string & from, std::string & to)
+{
+    if(&from == &to)
+    {
+        to = escape(from);
+        return true;
+    }
+    else
+    {
+        to.resize(from.size()*2+2);
+        long len= mysql_real_escape_string(&_mysql, const_cast<char *>(to.c_str()), from.c_str(), from.size());
+        if(len >= 0)
+        {
+            to.resize(len);
+            return true;
+
+        }
+        else
+        {
+            to.resize(0);
+            return false;
+        }
+    }
+}
+
 bool MysqlProxyConn::command(const char * szCmd, int nLength)
 {
 #if 1
