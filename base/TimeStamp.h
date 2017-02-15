@@ -27,6 +27,7 @@ public:
     }
 
     static TimeStamp now();
+    static time_t time();
 
 private:
     int64_t _ms;

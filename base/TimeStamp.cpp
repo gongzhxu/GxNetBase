@@ -5,6 +5,11 @@
 TimeStamp TimeStamp::now()
 {
     struct timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     return TimeStamp(tv.tv_sec*MicroSecondsPerSecond + tv.tv_usec);
+}
+
+time_t TimeStamp::time()
+{
+    return ::time(nullptr);
 }
