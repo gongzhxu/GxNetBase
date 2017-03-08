@@ -97,9 +97,8 @@ void TcpClient::onConnect(const BaseConnPtr & pConn)
             base::setReuseAddr(pConn->getSockfd(), true);
             base::setReusePort(pConn->getSockfd(), true);
             base::setTcpNoDely(pConn->getSockfd(), true);
-#if 1
             base::setKeepAlive(pConn->getSockfd(), true);
-#endif // 0
+
             _connMap.setConn(pConn->getConnInfo(), pConn);
         }
     }

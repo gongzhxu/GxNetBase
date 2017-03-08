@@ -51,7 +51,7 @@ void EventLoop::loop()
     while(!_quit)
     {
         int ret = event_base_loop(_base, EVLOOP_ONCE);
-        if(ret == 1)
+        if(ret == 1 && _pendingFunctors.size() == 0)
         {
             struct timeval delay = {60*60*60,0};
             event_base_loopexit(_base, &delay);

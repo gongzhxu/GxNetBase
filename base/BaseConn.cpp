@@ -99,7 +99,7 @@ void BaseConn::onEvent(short what)
         connectInLoop();
 
     }
-    else  if(what & (BEV_EVENT_READING | BEV_EVENT_WRITING | BEV_EVENT_EOF | BEV_EVENT_ERROR))
+    else  if(what & (BEV_EVENT_READING | BEV_EVENT_WRITING | BEV_EVENT_EOF | BEV_EVENT_ERROR | BEV_EVENT_TIMEOUT))
     {
         LOG_DEBUG("error:%d, %d, %s", what, errno, strerror(errno));
         closeInLoop();

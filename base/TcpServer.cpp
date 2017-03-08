@@ -68,9 +68,8 @@ void TcpServer::onAccept(evutil_socket_t sockfd)
     base::setReuseAddr(sockfd, true);
     base::setReusePort(sockfd, true);
     base::setTcpNoDely(sockfd, true);
-#if 1
     base::setKeepAlive(sockfd, true);
-#endif // 0
+
     //pass 'this' not safe
     _accept_cb(this, sockfd);
 }
