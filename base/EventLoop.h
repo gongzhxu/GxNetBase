@@ -71,6 +71,7 @@ private:
     std::mutex _mutex;
     std::list<Functor> _pendingFunctors;
     bool _callingPendingFunctors;
+    size_t _sizePendingFunctors;
 
     TimerMap    _timerMap;
     friend TimerId;

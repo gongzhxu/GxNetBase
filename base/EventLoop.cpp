@@ -18,7 +18,8 @@ EventLoop::EventLoop(int loopId):
     _wakeupFd(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)),
     _base(nullptr),
     _quit(false),
-    _callingPendingFunctors(false)
+    _callingPendingFunctors(false),
+    _sizePendingFunctors(0)
 {
     ASSERT_ABORT(_wakeupFd > 0);
 
@@ -51,7 +52,7 @@ void EventLoop::loop()
     while(!_quit)
     {
         int ret = event_base_loop(_base, EVLOOP_ONCE);
-        if(ret == 1 && _pendingFunctors.size() == 0)
+        if(ret == 1 && _sizePendingFunctors == 0)
         {
             struct timeval delay = {60*60*60,0};
             event_base_loopexit(_base, &delay);
@@ -92,6 +93,7 @@ void EventLoop::queueInLoop(const Functor && cb)
     {
         std::unique_lock<std::mutex> lock(_mutex);
         _pendingFunctors.push_back(std::move(cb));
+        _sizePendingFunctors++;
     }
 
     if(!isInLoopThread() || _callingPendingFunctors)
@@ -130,16 +132,17 @@ void EventLoop::doPendingFunctors()
     {
         std::unique_lock<std::mutex> lock(_mutex);
 #if 1
-        if(_pendingFunctors.size() > MAX_PENDING_FUNCTORS)
+        if(_sizePendingFunctors > MAX_PENDING_FUNCTORS)
         {
             std::list<Functor>::iterator it = _pendingFunctors.begin();
             std::advance(it, MAX_PENDING_FUNCTORS);
             functors.splice(functors.begin(), _pendingFunctors, _pendingFunctors.begin(), it);
-            wakeup();
+            _sizePendingFunctors -= MAX_PENDING_FUNCTORS;
         }
         else
         {
             _pendingFunctors.swap(functors);
+            _sizePendingFunctors = 0;
         }
 #else
         _pendingFunctors.swap(functors);
