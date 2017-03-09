@@ -2,7 +2,6 @@
 #define _EVENT_LOOP_H_
 
 #include <vector>
-#include <list>
 #include <map>
 #include <memory>
 #include <thread>
@@ -17,6 +16,7 @@ class EventLoop
 {
 public:
     typedef std::function<void()> Functor;
+    typedef std::vector<Functor> FunctorList;
     typedef std::map<TimerId *, Functor> TimerMap;
 
     EventLoop(int loopId = 0);
@@ -69,8 +69,7 @@ private:
     bool _quit;
 
     std::mutex _mutex;
-    std::list<Functor> _pendingFunctors;
-    bool _callingPendingFunctors;
+    FunctorList _pendingFunctors;
     size_t _sizePendingFunctors;
 
     TimerMap    _timerMap;

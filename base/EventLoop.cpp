@@ -9,8 +9,6 @@
 #include "TimerId.h"
 #include "WeakCallback.h"
 
-#define MAX_PENDING_FUNCTORS 32
-
 EventLoop::EventLoop(int loopId):
     _loopId(loopId),
     _threadId(CurrentThread::tid()),
@@ -18,7 +16,6 @@ EventLoop::EventLoop(int loopId):
     _wakeupFd(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)),
     _base(nullptr),
     _quit(false),
-    _callingPendingFunctors(false),
     _sizePendingFunctors(0)
 {
     ASSERT_ABORT(_wakeupFd > 0);
@@ -60,7 +57,7 @@ void EventLoop::loop()
 
         doPendingFunctors();
     }
-    LOG_INFO("loop quited %p, _pendingFunctors=%d", this, _pendingFunctors.size());
+    LOG_INFO("loop quited %p, _pendingFunctors=%d", this, _sizePendingFunctors);
 }
 
 //not thread safe, please close eventloop in the loop thread
@@ -96,7 +93,7 @@ void EventLoop::queueInLoop(const Functor && cb)
         _sizePendingFunctors++;
     }
 
-    if(!isInLoopThread() || _callingPendingFunctors)
+    if(!isInLoopThread())
     {
         wakeup();
     }
@@ -127,33 +124,17 @@ void EventLoop::addSignal(evutil_socket_t x, event_callback_fn cb, void * arg)
 
 void EventLoop::doPendingFunctors()
 {
-    std::list<Functor> functors;
-    _callingPendingFunctors = true;
+    FunctorList functors;
     {
         std::unique_lock<std::mutex> lock(_mutex);
-#if 1
-        if(_sizePendingFunctors > MAX_PENDING_FUNCTORS)
-        {
-            std::list<Functor>::iterator it = _pendingFunctors.begin();
-            std::advance(it, MAX_PENDING_FUNCTORS);
-            functors.splice(functors.begin(), _pendingFunctors, _pendingFunctors.begin(), it);
-            _sizePendingFunctors -= MAX_PENDING_FUNCTORS;
-        }
-        else
-        {
-            _pendingFunctors.swap(functors);
-            _sizePendingFunctors = 0;
-        }
-#else
         _pendingFunctors.swap(functors);
-#endif // 1
+        _sizePendingFunctors = 0;
     }
 
-    for(std::list<Functor>::iterator it = functors.begin(); it != functors.end(); ++it)
+    for(FunctorList::iterator it = functors.begin(); it != functors.end(); ++it)
     {
         (*it)();
     }
-    _callingPendingFunctors = false;
 }
 
 void EventLoop::wakeup()
