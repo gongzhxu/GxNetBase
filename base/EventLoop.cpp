@@ -24,7 +24,7 @@ EventLoop::EventLoop(int loopId):
     ASSERT_ABORT(_base);
 
     //'this' contain the '_base' so this is safe
-    _wakeupEvent= event_new(_base, _wakeupFd, EV_READ | EV_PERSIST, handleWakeup, this);
+    _wakeupEvent= event_new(_base, _wakeupFd, EV_READ| EV_PERSIST, handleWakeup, this);
     ASSERT_ABORT(_wakeupEvent);
     ASSERT_ABORT(event_add(_wakeupEvent, nullptr) == 0);
 }
@@ -48,14 +48,11 @@ void EventLoop::loop()
 
     while(!_quit)
     {
-        int ret = event_base_loop(_base, EVLOOP_ONCE);
-        if(ret == 1 && _sizePendingFunctors == 0)
+        event_base_loop(_base, EVLOOP_ONCE);
+        if(_sizePendingFunctors > 0)
         {
-            struct timeval delay = {60*60*60,0};
-            event_base_loopexit(_base, &delay);
+            doPendingFunctors();
         }
-
-        doPendingFunctors();
     }
     LOG_INFO("loop quited %p, _pendingFunctors=%d", this, _sizePendingFunctors);
 }
@@ -65,10 +62,7 @@ void EventLoop::quit()
 {
     LOG_DEBUG("event loop quiting %p...", this);
     _quit = true;
-    if(!isInLoopThread())
-    {
-        wakeup();
-    }
+    wakeup();
 }
 
 //if in loop thread this call immediately, else queue in loop
@@ -87,13 +81,15 @@ void EventLoop::runInLoop(const Functor && cb)
 //called when the loop event end
 void EventLoop::queueInLoop(const Functor && cb)
 {
+    size_t sizePendingFunctors = 0;
+
     {
         std::unique_lock<std::mutex> lock(_mutex);
+        sizePendingFunctors = _sizePendingFunctors++;
         _pendingFunctors.push_back(std::move(cb));
-        _sizePendingFunctors++;
     }
 
-    if(!isInLoopThread())
+    if(sizePendingFunctors == 0)
     {
         wakeup();
     }
@@ -127,8 +123,8 @@ void EventLoop::doPendingFunctors()
     FunctorList functors;
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        _pendingFunctors.swap(functors);
         _sizePendingFunctors = 0;
+        functors.swap(_pendingFunctors);
     }
 
     for(FunctorList::iterator it = functors.begin(); it != functors.end(); ++it)
