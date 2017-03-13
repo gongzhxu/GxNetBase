@@ -48,7 +48,7 @@ std::string ConfigReader::GetNameStr(const char * name, const char * defvalue)
         ConfigMap::iterator it = _cfgMap.find(name);
         if (it != _cfgMap.end())
         {
-            value = (char*)it->second.c_str();
+            value = it->second;
         }
 	}
 
