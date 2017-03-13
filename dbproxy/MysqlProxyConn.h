@@ -81,13 +81,14 @@ public:
     std::string escape(const std::string & from);
     bool escape(const std::string & from, std::string & to);
     bool command(const char * szCmd, int nLength);
+    bool query(const char * szCmd);
     bool commit();
 private:
     MysqlConnInfo _info;
 
     MYSQL       _mysql;
     bool        _bConnect;
-    int         _num;
+    int          _num;
 };
 
 #endif //_MYSQL_PROXY_CONN_H_

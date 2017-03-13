@@ -23,7 +23,7 @@ bool MysqlProxyConn::init()
 {
     if(!mysql_init(&_mysql))
     {
-        LOG_WARN("connect mysql error");
+        LOG_INFO("init mysql error:%d,%s", mysql_errno(&_mysql), mysql_error(&_mysql));
         return false;
     }
 
@@ -36,15 +36,15 @@ bool MysqlProxyConn::init()
 
     if(!mysql_real_connect(&_mysql, _info.host.c_str(), _info.user.c_str(), _info.passwd.c_str(), _info.database.c_str(), _info.port, nullptr, 0))
     {
+        LOG_INFO("connect mysql=%s error:%d,%s", _info.host.c_str(), mysql_errno(&_mysql), mysql_error(&_mysql));
         mysql_close(&_mysql);
-        LOG_WARN("connect mysql error");
         return false;
     }
 
     if(mysql_set_character_set(&_mysql, "utf8") != 0)
     {
+        LOG_INFO("connect mysql=%s error:%d,%s", _info.host.c_str(), mysql_errno(&_mysql), mysql_error(&_mysql));
         mysql_close(&_mysql);
-        LOG_WARN("connect mysql error");
         return false;
     }
 
@@ -67,14 +67,8 @@ std::string MysqlProxyConn::escape(const std::string & from)
     std::string to;
     to.resize(from.size()*2+2);
     long len= mysql_real_escape_string(&_mysql, const_cast<char *>(to.c_str()), from.c_str(), from.size());
-    if(len >= 0)
-    {
-        return to.substr(0, len);
-    }
-    else
-    {
-        return "";
-    }
+
+    return len >= 0? to.substr(0, len): "";
 }
 
 bool MysqlProxyConn::escape(const std::string & from, std::string & to)
@@ -104,22 +98,17 @@ bool MysqlProxyConn::escape(const std::string & from, std::string & to)
 
 bool MysqlProxyConn::command(const char * szCmd, int nLength)
 {
-#if 1
     LOG_DEBUG("mysql cmd:%s, %d", szCmd, nLength);
-#else
-     LOG_INFO("mysql cmd:%s, %d", szCmd, nLength);
-#endif
 
     int nRet = mysql_real_query(&_mysql, szCmd, nLength);
 	if(nRet != DBRESULT_SUCCESS)
     {
         unsigned int nErr = mysql_errno(&_mysql);
-        LOG_WARN("mysql query error:%d, %d", nRet, nErr);
+        LOG_WARN("mysql query error:%d, %d, %s", nRet, nErr, mysql_error(&_mysql));
         if(nErr == CR_SERVER_GONE_ERROR ||
 			nErr == CR_SERVER_LOST ||
 			nErr == CR_CONN_HOST_ERROR)
         {
-
 			LOG_INFO("mysql connection disconnect!!!");
 			release();
 			if(init())
@@ -129,7 +118,19 @@ bool MysqlProxyConn::command(const char * szCmd, int nLength)
 		}
     }
 
-    _num++;
+    if(nRet != DBRESULT_SUCCESS)
+    {
+        LOG_WARN("mysql query error:%d, %d, %s", nRet, mysql_errno(&_mysql), mysql_error(&_mysql));
+        return false;
+    }
+
+    return true;
+}
+
+bool MysqlProxyConn::query(const char * szCmd)
+{
+    int nRet = mysql_query(&_mysql, szCmd);
+
     return nRet == DBRESULT_SUCCESS? true: false;
 }
 
