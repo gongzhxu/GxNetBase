@@ -49,10 +49,7 @@ void EventLoop::loop()
     while(!_quit)
     {
         event_base_loop(_base, EVLOOP_ONCE);
-        if(_sizePendingFunctors > 0)
-        {
-            doPendingFunctors();
-        }
+        doPendingFunctors();
     }
     LOG_INFO("loop quited %p, _pendingFunctors=%d", this, _sizePendingFunctors);
 }
