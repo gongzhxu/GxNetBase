@@ -9,7 +9,11 @@ void writeinfo(uint32_t id, const char * hostname)
 	curPid = getpid();
 
     FILE* f = fopen("server.pid", "w");
-    assert(f);
+    if(!f)
+    {
+        ABORT_MSG("open file=%s,error=%s\n", "server.pid", strerror(errno));
+        return;
+    }
 
     char szMsg[1024] = {0};
 

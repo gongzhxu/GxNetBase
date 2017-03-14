@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <memory>
 #include <unistd.h>
+#include "BaseUtil.h"
 
 class LogFile
 {
@@ -37,13 +38,9 @@ private:
             _fp(::fopen(filename.c_str(), "a")),
             _writtenBytes(0)
             {
-                if(_fp == NULL)
+                if(!_fp)
                 {
-                    fprintf(stderr,
-                            "create logfile=%s,error=%s\n",
-                            filename.c_str(),
-                            strerror(errno));
-                    exit(EXIT_FAILURE);
+                    ABORT_MSG("create logfile=%s,error=%s\n", filename.c_str(), strerror(errno));
                 }
             }
 
