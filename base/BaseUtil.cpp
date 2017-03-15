@@ -1,6 +1,9 @@
 #include "BaseUtil.h"
 
+#include <vector>
 #include <unistd.h>
+
+#define MAX_WRITE_INFO 100
 
 void writeinfo(uint32_t id, const char * hostname)
 {
@@ -8,19 +11,43 @@ void writeinfo(uint32_t id, const char * hostname)
 
 	curPid = getpid();
 
-    FILE* f = fopen("server.pid", "w");
-    if(!f)
+
+    std::vector<std::string> strMsgs;
+
     {
-        ABORT_MSG("open file=%s,error=%s\n", "server.pid", strerror(errno));
-        return;
+        std::string strMsg;
+        base::sprintfex(strMsg, "%s - pid=%d, id=%d, hostname=%s\n", TimeStamp::now().format().c_str(), curPid, id, hostname);
+        strMsgs.push_back(strMsg);
+
+        FILE * fp = fopen("server.pid", "r");
+        if(fp)
+        {
+            for(size_t i = 0; i < MAX_WRITE_INFO-1 && !feof(fp); ++i)
+            {
+                char szMsg[1024] = {0};
+                fgets(szMsg, sizeof(szMsg), fp);
+                strMsgs.push_back(szMsg);
+            }
+
+            fclose(fp);
+        }
     }
 
-    char szMsg[1024] = {0};
+    {
+        FILE * fp = fopen("server.pid", "w");
+        if(!fp)
+        {
+            ABORT_MSG("open file=%s,error=%s\n", "server.pid", strerror(errno));
+            return;
+        }
 
-    snprintf(szMsg, sizeof(szMsg), "pid=%d, id=%d, hostname=%s\n", curPid, id, hostname);
+        for(size_t i = 0; i < strMsgs.size(); ++i)
+        {
+            fwrite(strMsgs[i].c_str(), strMsgs[i].size(), sizeof(char), fp);
+        }
 
-    fwrite(szMsg, strlen(szMsg), 1, f);
-    fclose(f);
+        fclose(fp);
+    }
 }
 
 AsyncLogging & getLogger()

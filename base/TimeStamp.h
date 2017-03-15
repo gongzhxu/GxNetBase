@@ -2,6 +2,7 @@
 #define _TIME_STAMP_
 
 #include <functional>
+#include <string>
 
 class TimeStamp:public std::less_equal<TimeStamp>
 {
@@ -25,6 +26,8 @@ public:
     {
         return static_cast<time_t>(_ms / MicroSecondsPerSecond);
     }
+
+    std::string format() const;
 
     static TimeStamp now();
     static time_t time();
