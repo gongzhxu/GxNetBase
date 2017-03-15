@@ -3,20 +3,15 @@
 #include <vector>
 #include <unistd.h>
 
-#define MAX_WRITE_INFO 100
+#define MAX_WRITE_INFO 32
 
 void writeinfo(uint32_t id, const char * hostname)
 {
-	uint32_t curPid;
-
-	curPid = getpid();
-
-
     std::vector<std::string> strMsgs;
 
     {
         std::string strMsg;
-        base::sprintfex(strMsg, "%s - pid=%d, id=%d, hostname=%s\n", TimeStamp::now().format().c_str(), curPid, id, hostname);
+        base::sprintfex(strMsg, "%s - pid=%d, id=%d, hostname=%s\n", TimeStamp::now().format().c_str(), getpid(), id, hostname);
         strMsgs.push_back(strMsg);
 
         FILE * fp = fopen("server.pid", "r");
