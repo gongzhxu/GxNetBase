@@ -12,7 +12,7 @@ void writeinfo(uint32_t id, const char * hostname)
     {
         std::string strMsg;
         base::sprintfex(strMsg, "%s - pid=%d, id=%d, hostname=%s\n", TimeStamp::now().format().c_str(), getpid(), id, hostname);
-        strMsgs.push_back(strMsg);
+        strMsgs.emplace_back(strMsg);
 
         FILE * fp = fopen("server.pid", "r");
         if(fp)
@@ -21,7 +21,7 @@ void writeinfo(uint32_t id, const char * hostname)
             {
                 char szMsg[1024] = {0};
                 fgets(szMsg, sizeof(szMsg), fp);
-                strMsgs.push_back(szMsg);
+                strMsgs.emplace_back(szMsg);
             }
 
             fclose(fp);

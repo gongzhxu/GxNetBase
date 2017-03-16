@@ -17,10 +17,10 @@ class TimerId
 private:
     typedef std::function<void()> Functor;
 
-    TimerId(EventLoop * loop, const struct timeval & tv, const Functor & cb, int type);
+    TimerId(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type);
     ~TimerId();
 public:
-    static TimerId * createTimer(EventLoop * loop, const struct timeval & tv, const Functor & cb, int type);
+    static TimerId * createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type);
     static void deleteTimer(TimerId * timer);
 private:
     void startTimer();

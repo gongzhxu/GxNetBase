@@ -50,7 +50,7 @@ void AsyncLogging::append(LoggerPtr && logger)
 {
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        _loggers.push_back(std::move(logger));
+        _loggers.emplace_back(std::move(logger));
     }
 
     _cond.notify_one();

@@ -24,7 +24,7 @@ BaseConnPtr ConnList::getNextConn()
 void ConnList::addConn(const BaseConnPtr & pConn)
 {
     std::unique_lock<std::mutex> lock(_mutex);
-    _connList.push_back(pConn);
+    _connList.emplace_back(pConn);
 }
 
 void ConnList::delConn(const BaseConnPtr & pConn)

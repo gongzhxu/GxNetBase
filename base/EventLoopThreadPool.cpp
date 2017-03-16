@@ -21,8 +21,8 @@ void EventLoopThreadPool::start(int numThreads)
     for(int i = 0; i < numThreads; ++i)
     {
         EventLoopThreadPtr elt(MakeEventLoopThreadPtr(i));
-        _threads.push_back(elt);
-        _loops.push_back(elt->startLoop());
+        _threads.emplace_back(elt);
+        _loops.emplace_back(elt->startLoop());
     }
 }
 

@@ -38,7 +38,7 @@ void base::splitex(const std::string & str, const std::string delim, std::vector
         std::string str1 = str.substr(last, index-last);
         if(!str1.empty())
         {
-            ret.push_back(str1);
+            ret.emplace_back(str1);
         }
 
         last=index+1;
@@ -50,7 +50,7 @@ void base::splitex(const std::string & str, const std::string delim, std::vector
         std::string str1 = str.substr(last, index-last);
         if(!str1.empty())
         {
-            ret.push_back(str1);
+            ret.emplace_back(str1);
         }
     }
 }

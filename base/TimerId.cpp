@@ -3,11 +3,11 @@
 #include "BaseUtil.h"
 #include "EventLoop.h"
 
-TimerId::TimerId(EventLoop * loop, const struct timeval & tv, const Functor & cb, int type):
+TimerId::TimerId(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type):
     _loop(loop),
     _timer(nullptr),
     _tv(tv),
-    _cb(cb),
+    _cb(std::move(cb)),
     _type(type)
 {
 
@@ -20,9 +20,9 @@ TimerId::~TimerId()
     evtimer_del(_timer);
 }
 
-TimerId * TimerId::createTimer(EventLoop * loop, const struct timeval & tv, const Functor & cb, int type)
+TimerId * TimerId::createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type)
 {
-    TimerId * pTimer = new TimerId(loop, tv, cb, type);
+    TimerId * pTimer = new TimerId(loop, tv, std::move(cb), type);
     pTimer->_loop->runInLoop(std::bind(&TimerId::startTimer, pTimer));
     return pTimer;
 }

@@ -83,7 +83,7 @@ void EventLoop::queueInLoop(const Functor && cb)
     {
         std::unique_lock<std::mutex> lock(_mutex);
         sizePendingFunctors = _sizePendingFunctors++;
-        _pendingFunctors.push_back(std::move(cb));
+        _pendingFunctors.emplace_back(std::move(cb));
     }
 
     if(sizePendingFunctors == 0)
@@ -92,14 +92,14 @@ void EventLoop::queueInLoop(const Functor && cb)
     }
 }
 
-void EventLoop::runAfter(const struct timeval & tv, const Functor & cb)
+void EventLoop::runAfter(const struct timeval & tv, const Functor && cb)
 {
-    TimerId::createTimer(this, tv, cb, TIMER_ONCE);
+    TimerId::createTimer(this, tv, std::move(cb), TIMER_ONCE);
 }
 
-TimerId * EventLoop::runEvery(const struct timeval & tv, const Functor & cb)
+TimerId * EventLoop::runEvery(const struct timeval & tv, const Functor && cb)
 {
-    return TimerId::createTimer(this, tv, cb, TIMER_PERSIST);;
+    return TimerId::createTimer(this, tv, std::move(cb), TIMER_PERSIST);;
 }
 
 void EventLoop::runEveryStop(TimerId * timer)
@@ -112,7 +112,7 @@ void EventLoop::addSignal(evutil_socket_t x, event_callback_fn cb, void * arg)
     struct event * se = evsignal_new(_base, x, cb, arg);
     ASSERT_ABORT(se);
     evsignal_add(se, nullptr);
-    _signalEvents.push_back(se);
+    _signalEvents.emplace_back(se);
 }
 
 void EventLoop::doPendingFunctors()

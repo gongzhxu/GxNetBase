@@ -64,7 +64,7 @@ public:
         std::unique_lock<std::mutex> lock(_mutex);
         for(auto it = _connsMap.begin(); it != _connsMap.end(); ++it)
         {
-            keyList.push_back(it->first);
+            keyList.emplace_back(it->first);
         }
     }
 
@@ -73,7 +73,7 @@ public:
         std::unique_lock<std::mutex> lock(_mutex);
         for(auto it = _connsMap[key].begin(); it != _connsMap[key].end(); ++it)
         {
-            connList.push_back(*it);
+            connList.emplace_back(*it);
         }
     }
 private:

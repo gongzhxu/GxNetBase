@@ -43,8 +43,8 @@ public:
     void runInLoop(const Functor && cb);
     void queueInLoop(const Functor && cb);
 
-    void runAfter(const struct timeval & tv, const Functor & cb);
-    TimerId * runEvery(const struct timeval & tv, const Functor & cb);
+    void runAfter(const struct timeval & tv, const Functor && cb);
+    TimerId * runEvery(const struct timeval & tv, const Functor && cb);
     void runEveryStop(TimerId * timer);
 
     void addSignal(evutil_socket_t x, event_callback_fn cb, void * arg);

@@ -416,7 +416,7 @@ bool RedisProxyConn::hgetall(const char * key, LONGValueList & retValue, bool bK
             for(size_t i = 0; i < reply->elements; i += 2)
             {
                 redisReply * element_reply = reply->element[i+nPos];
-                retValue.push_back(atoll(element_reply->str));
+                retValue.emplace_back(atoll(element_reply->str));
             }
         }
 
@@ -441,7 +441,7 @@ bool RedisProxyConn::smembers(const char * key, ValueList & retValue)
         redisReply* child_reply = reply->element[i];
         if(child_reply->type == REDIS_REPLY_STRING)
         {
-            retValue.push_back(child_reply->str);
+            retValue.emplace_back(child_reply->str);
         }
     }
 
@@ -463,8 +463,7 @@ bool RedisProxyConn::smembers(const char * key, LONGValueList & retValue)
         redisReply* child_reply = reply->element[i];
         if(child_reply->type == REDIS_REPLY_STRING)
         {
-            retValue.push_back(atol(child_reply->str));
-            //retValue.push_back(child_reply->integer);
+            retValue.emplace_back(atol(child_reply->str));
         }
     }
 

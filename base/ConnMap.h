@@ -112,7 +112,7 @@ public:
         std::unique_lock<std::mutex> lock(_mutex);
         for(typename ConnMap_t::iterator it = _connMap.begin(); it != _connMap.end(); ++it)
         {
-            connList.push_back(it->second);
+            connList.emplace_back(it->second);
         }
     }
 private:
