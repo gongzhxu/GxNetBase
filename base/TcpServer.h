@@ -2,6 +2,7 @@
 #define _TCP_SERVER_H_
 
 #include <stdint.h>
+#include <set>
 #include <map>
 #include <mutex>
 #include <string>
@@ -10,46 +11,86 @@
 #include <event2/listener.h>
 
 #include "ConnInfo.h"
+#include "SocketOps.h"
+#include "BaseConn.h"
+#include "EventLoop.h"
 
 class TcpServer;
-class EventLoop;
-class BaseConn;
-
-typedef std::shared_ptr<BaseConn> BaseConnPtr;
-typedef std::map<uint32_t,  BaseConnPtr> ConnMap_t;
-typedef std::function<void (TcpServer *, evutil_socket_t)> AcceptCallback;
 typedef std::shared_ptr<TcpServer> TcpServerPtr;
-
 #define MakeTcpServerPtr std::make_shared<TcpServer>
 
 class TcpServer
 {
 public:
-    TcpServer(EventLoop * loop, const ConnInfo & ConnInfo, const AcceptCallback & cb);
+    typedef std::map<ConnInfo, struct evconnlistener *> ListenMap_t;
+
+    TcpServer(EventLoop * loop);
     ~TcpServer();
 
-    void start();
-    void stop();
-    ConnInfo & getConnInfo() { return _connInfo; }
+    template<typename T>
+    void addServer(const ConnInfo & ci)
+    {
+        {
+            std::unique_lock<std::mutex> lock(_mutex);
+            _connList.insert(ci);
+        }
+        _loop->runInLoop(std::bind(&TcpServer::addServerInLoop<T>, this, ci));
+    }
+
+    void delServer(const ConnInfo & ci);
+
+    void getConnInfo(std::vector<ConnInfo> & connList);
 private:
-    void onConnect(const BaseConnPtr & pConn);
-    void onClose(const BaseConnPtr & pConn);
-    void onAccept(evutil_socket_t sockfd);
+    template<typename T>
+    void addServerInLoop(const ConnInfo & ci)
+    {
+        struct evconnlistener * listener = _listeners[ci];
+        if(!listener)
+        {
+            AddrInfo addrInfo = ci.getCurrAddrInfo();
 
+            base::SockAddr sockAddr;
+            int sockLen = base::setAddr(addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), &sockAddr);
 
+            _listeners[ci] = evconnlistener_new_bind(_loop->get_event(), onAccept<T>, this,
+                            LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
+                            (const sockaddr *)&sockAddr, sockLen);
+        }
+    }
+
+    void delServerInLoop(const ConnInfo & ci);
+
+    template<typename T>
+    void onAccept(evutil_socket_t sockfd)
+    {
+        base::setReuseAddr(sockfd, true);
+        base::setReusePort(sockfd, true);
+        base::setTcpNoDely(sockfd, true);
+        base::setKeepAlive(sockfd, true);
+        BaseConnPtr  pConn(new T);
+        pConn->doAccept(this, sockfd);
+    }
+
+    template<typename T>
     static void onAccept(struct evconnlistener *,
                         evutil_socket_t sockfd,
-                        struct sockaddr * addr,
-                        int socklen,
-                        void * arg);
+                        struct sockaddr *,
+                        int,
+                        void * arg)
+    {
+        static_cast<TcpServer *>(arg)->onAccept<T>(sockfd);
+    }
 
-
+    void onConnect(const BaseConnPtr & pConn);
+    void onClose(const BaseConnPtr & pConn);
 private:
-    EventLoop * _loop;
-    ConnInfo _connInfo;
+    EventLoop *             _loop;
     struct evconnlistener * _listener;
 
-    AcceptCallback _accept_cb;
+    std::mutex               _mutex;
+    std::set<ConnInfo>      _connList;
+
+    ListenMap_t              _listeners;
 
     friend BaseConn;
 };

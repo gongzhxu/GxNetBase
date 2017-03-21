@@ -9,15 +9,14 @@
 #include <event2/event.h>
 
 #include "CurrentThread.h"
-
-class TimerId;
+#include "TimerId.h"
 
 class EventLoop
 {
 public:
     typedef std::function<void()> Functor;
     typedef std::vector<Functor> FunctorList;
-    typedef std::map<TimerId *, Functor> TimerMap;
+    typedef std::map<TimerId, TimerObj *> TimerMap;
 
     EventLoop(int loopId = 0);
     ~EventLoop();
@@ -43,9 +42,9 @@ public:
     void runInLoop(const Functor && cb);
     void queueInLoop(const Functor && cb);
 
-    void runAfter(const struct timeval & tv, const Functor && cb);
-    TimerId * runEvery(const struct timeval & tv, const Functor && cb);
-    void runEveryStop(TimerId * timer);
+    TimerId runAfter(const struct timeval & tv, const Functor && cb);
+    TimerId runEvery(const struct timeval & tv, const Functor && cb);
+    void cancel(TimerId timer);
 
     void addSignal(evutil_socket_t x, event_callback_fn cb, void * arg);
 private:
@@ -54,8 +53,9 @@ private:
     void wakeup();
     void handleWakeup();
 
-    void addTimer(TimerId * timer);
-    void delTimer(TimerId * timer);
+    void addTimer(TimerId timerId, TimerObj * timerObj);
+    void delTimer(TimerId timerId);
+    TimerObj * getTimer(TimerId timerId);
 
     static void handleWakeup(int fd, short which, void *arg);
 private:
@@ -73,7 +73,7 @@ private:
     size_t _sizePendingFunctors;
 
     TimerMap    _timerMap;
-    friend TimerId;
+    friend TimerObj;
 
     std::vector<struct event *> _signalEvents;
 };

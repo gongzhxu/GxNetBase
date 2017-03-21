@@ -6,7 +6,6 @@
 
 #include "BaseUtil.h"
 #include "BaseConn.h"
-#include "TimerId.h"
 #include "WeakCallback.h"
 
 EventLoop::EventLoop(int loopId):
@@ -92,19 +91,19 @@ void EventLoop::queueInLoop(const Functor && cb)
     }
 }
 
-void EventLoop::runAfter(const struct timeval & tv, const Functor && cb)
+TimerId EventLoop::runAfter(const struct timeval & tv, const Functor && cb)
 {
-    TimerId::createTimer(this, tv, std::move(cb), TIMER_ONCE);
+    return TimerObj::createTimer(this, tv, std::move(cb), TIMER_ONCE);
 }
 
-TimerId * EventLoop::runEvery(const struct timeval & tv, const Functor && cb)
+TimerId  EventLoop::runEvery(const struct timeval & tv, const Functor && cb)
 {
-    return TimerId::createTimer(this, tv, std::move(cb), TIMER_PERSIST);;
+    return TimerObj::createTimer(this, tv, std::move(cb), TIMER_PERSIST);;
 }
 
-void EventLoop::runEveryStop(TimerId * timer)
+void EventLoop::cancel(TimerId timer)
 {
-    return TimerId::deleteTimer(timer);
+    TimerObj::deleteTimer(this, timer);
 }
 
 void EventLoop::addSignal(evutil_socket_t x, event_callback_fn cb, void * arg)
@@ -140,17 +139,25 @@ void EventLoop::wakeup()
     }
 }
 
-void EventLoop::addTimer(TimerId * timer)
+void EventLoop::addTimer(TimerId timerId, TimerObj * timerObj)
 {
-    assert(_timerMap[timer] == nullptr);
-    _timerMap[timer] = timer->_cb;
+    _timerMap[timerId] = timerObj;
 }
 
-
-void EventLoop::delTimer(TimerId * timer)
+void EventLoop::delTimer(TimerId timerId)
 {
-    //assert(_timerMap[timer] == timer->_cb);
-    _timerMap.erase(timer);
+    _timerMap.erase(timerId);
+}
+
+TimerObj * EventLoop::getTimer(TimerId timerId)
+{
+    auto it = _timerMap.find(timerId);
+    if(it != _timerMap.end())
+    {
+        return it->second;
+    }
+
+    return nullptr;
 }
 
 void EventLoop::handleWakeup()

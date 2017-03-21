@@ -1,38 +1,43 @@
 #include "TimerId.h"
 
+#include <atomic>
+
 #include "BaseUtil.h"
 #include "EventLoop.h"
 
-TimerId::TimerId(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type):
+static std::atomic<TimerId> g_timerId(0);
+
+TimerObj::TimerObj(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type):
     _loop(loop),
     _timer(nullptr),
     _tv(tv),
     _cb(std::move(cb)),
+    _timerId(++g_timerId),
     _type(type)
 {
 
 }
 
-TimerId::~TimerId()
+TimerObj::~TimerObj()
 {
     _loop->assertInLoopThread();
-    _loop->delTimer(this);
+    _loop->delTimer(_timerId);
     evtimer_del(_timer);
 }
 
-TimerId * TimerId::createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type)
+TimerId TimerObj::createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type)
 {
-    TimerId * pTimer = new TimerId(loop, tv, std::move(cb), type);
-    pTimer->_loop->runInLoop(std::bind(&TimerId::startTimer, pTimer));
-    return pTimer;
+    TimerObj * pTimer = new TimerObj(loop, tv, std::move(cb), type);
+    loop->runInLoop(std::bind(&TimerObj::startTimer, pTimer));
+    return pTimer->_timerId;
 }
 
-void TimerId::deleteTimer(TimerId * timer)
+void TimerObj::deleteTimer(EventLoop * loop, TimerId TimerId)
 {
-    timer->_loop->runInLoop(std::bind(&TimerId::stopTimer, timer));
+    loop->runInLoop(std::bind(&TimerObj::stopTimer, loop, TimerId));
 }
 
-void TimerId::startTimer()
+void TimerObj::startTimer()
 {
     if(_type == TIMER_ONCE)
     {
@@ -44,29 +49,31 @@ void TimerId::startTimer()
     }
     ASSERT_ABORT(_timer);
 
-    _loop->addTimer(this);
-
-    int ret = 0;
-    ret = evtimer_add(_timer, &_tv);
+    _loop->addTimer(_timerId, this);
+    int ret = evtimer_add(_timer, &_tv);
     ASSERT_ABORT(ret == 0);
 }
 
-void TimerId::onTimer()
+void TimerObj::onTimer()
 {
     _cb();
     if(_type == TIMER_ONCE)
     {
-        stopTimer();
+        stopTimer(_loop, _timerId);
     }
 }
 
-void TimerId::stopTimer()
+void TimerObj::stopTimer(EventLoop * loop, TimerId TimerId)
 {
-    delete this;
+    TimerObj * timerObj = loop->getTimer(TimerId);
+    if(timerObj)
+    {
+        delete timerObj;
+    }
 }
 
-void TimerId::handleTimer(int, short, void * arg)
+void TimerObj::handleTimer(int, short, void * arg)
 {
-    static_cast<TimerId *>(arg)->onTimer();
+    static_cast<TimerObj *>(arg)->onTimer();
 }
 

@@ -95,7 +95,7 @@ void base::setReusePort(int sockfd, bool on)
 void base::setTcpNoDely(int sockfd, bool on)
 {
     int optval = on? 1: 0;
-    ::setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &optval, static_cast<socklen_t>(sizeof(optval)));
+    ::setsockopt(sockfd, SOL_TCP, TCP_NODELAY, &optval, static_cast<socklen_t>(sizeof(optval)));
 }
 
 void base::setKeepAlive(int sockfd, bool on,  int keepIdle, int keepInterval, int keepCount)

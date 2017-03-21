@@ -7,9 +7,8 @@
 #include "CurrentThread.h"
 #include "AsyncLogging.h"
 
-__thread char t_time[32];
-__thread time_t t_lastSecond;
-
+static __thread char t_time[32];
+static __thread time_t t_lastSecond;
 
 const char * LogLevelName[Logger::NUM_LEVELS] =
 {

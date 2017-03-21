@@ -8,47 +8,55 @@
 #include "ConnInfo.h"
 #include "ConnList.h"
 #include "ConnMap.h"
+#include "BaseConn.h"
+#include "EventLoop.h"
 
 class TcpClient;
-class EventLoop;
-class BaseConn;
-
-typedef std::shared_ptr<BaseConn> BaseConnPtr;
-typedef std::vector<ConnInfo> ConnInfos;
-typedef std::vector<BaseConnPtr> ConnList_t;
-typedef std::function<void (TcpClient *, const ConnInfo &)> ConnectCallback;
-
 typedef std::shared_ptr<TcpClient> TcpClientPtr;
-
 #define MakeTcpClientPtr std::make_shared<TcpClient>
 
 class TcpClient
 {
 public:
-    TcpClient(EventLoop * loop, const ConnectCallback & cb);
+    TcpClient(EventLoop * loop);
     ~TcpClient();
 
 public:
-    void addClient(const ConnInfo & ci);
+    template<typename T>
+    void addClient(const ConnInfo & ci)
+    {
+        _loop->runInLoop(std::bind(&TcpClient::addClientInLoop<T>, this, ci));
+    }
+
     void delClient(const ConnInfo & ci);
 
     BaseConnPtr getConn(const ConnInfo & ci);
-    BaseConnPtr getNextConn();
+    BaseConnPtr getNextConn(int type = 0);
 
     size_t size() { return _connList.size(); }
 private:
-    void addClientInLoop(const ConnInfo & ci);
+    template<typename T>
+    void addClientInLoop(const ConnInfo & ci)
+    {
+        if(!_connMap.hasConn(ci))
+        {
+            _connMap.addConn(ci, nullptr);
+            BaseConnPtr  pConn(new T);
+            pConn->doConnect(this, ci);
+        }
+    }
+
     void delClientInLoop(const ConnInfo & ci);
+
     void onConnect(const BaseConnPtr & pConn);
     void onClose(const BaseConnPtr & pConn);
     void onRetry(const BaseConnPtr & pConn);
 
 private:
-    EventLoop * _loop;
-    ConnList _connList;
-    ConnMap<ConnInfo> _connMap;
+    EventLoop *              _loop;
+    std::map<int, ConnList>  _connList;
+    ConnMap<ConnInfo>       _connMap;
 
-    ConnectCallback _connect_cb;
     friend BaseConn;
 };
 

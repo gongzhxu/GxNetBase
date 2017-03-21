@@ -15,16 +15,17 @@ class ConnMap
 {
 public:
     typedef std::map<T,  BaseConnPtr> ConnMap_t;
+    typedef std::vector<BaseConnPtr> ConnList_t;
 
     ConnMap() {};
-    ~ConnMap() {};
+    ~ConnMap(){};
 
     BaseConnPtr getConn(const T & key)
     {
         BaseConnPtr pConn = nullptr;
         {
             std::unique_lock<std::mutex> lock(_mutex);
-            typename ConnMap_t::iterator it = _connMap.find(key);
+            auto it = _connMap.find(key);
             if(it != _connMap.end())
             {
                 pConn = it->second;
@@ -37,7 +38,7 @@ public:
     bool hasConn(const T & key)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        typename ConnMap_t::iterator it = _connMap.find(key);
+       auto it = _connMap.find(key);
         if(it != _connMap.end())
         {
             return true;
@@ -49,7 +50,7 @@ public:
     bool hasConn(const T & key, const BaseConnPtr & pConn)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        typename ConnMap_t::iterator it = _connMap.find(key);
+        auto it = _connMap.find(key);
         if(it != _connMap.end() && it->second == pConn)
         {
             return true;
@@ -61,7 +62,6 @@ public:
     void addConn(const T & key, const BaseConnPtr & pConn)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        //assert(_connMap[key] == nullptr);
         _connMap[key] =  pConn;
     }
 
@@ -74,7 +74,6 @@ public:
     void delConn(const T & key, const BaseConnPtr &)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        //assert(_connMap[key] == nullptr || _connMap[key] == pConn);
         _connMap.erase(key);
     }
 
@@ -88,7 +87,7 @@ public:
     void stopConn()
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        for(typename ConnMap_t::iterator it = _connMap.begin(); it != _connMap.end(); ++it)
+        for(auto it = _connMap.begin(); it != _connMap.end(); ++it)
         {
             (it->second)->shutdown();
         }
@@ -99,7 +98,7 @@ public:
     void sendPdu(const std::shared_ptr<void> & pdu)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        for(typename ConnMap_t::iterator it = _connMap.begin(); it != _connMap.end(); ++it)
+        for(auto it = _connMap.begin(); it != _connMap.end(); ++it)
         {
             (it->second)->sendPdu(pdu);
         }
@@ -107,10 +106,10 @@ public:
 
     size_t size() { return _connMap.size(); }
 
-    void getAllConn(std::vector<BaseConnPtr> & connList)
+    void getAllConn(ConnList_t & connList)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        for(typename ConnMap_t::iterator it = _connMap.begin(); it != _connMap.end(); ++it)
+        for(auto it = _connMap.begin(); it != _connMap.end(); ++it)
         {
             connList.emplace_back(it->second);
         }

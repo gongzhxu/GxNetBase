@@ -19,9 +19,12 @@ public:
 
     AddrInfo & operator=(const AddrInfo & ai)
     {
-        _sa_family = ai._sa_family;
-         _ip = ai._ip;
-         _port = ai._port;
+        if(this != &ai)
+        {
+            _sa_family = ai._sa_family;
+            _ip = ai._ip;
+            _port = ai._port;
+        }
         return *this;
     }
 
@@ -37,37 +40,42 @@ private:
 class ConnInfo:public std::less_equal<ConnInfo>
 {
 public:
-    ConnInfo(uint32_t id = 0, std::string hostname = "", int retry = 1):
-        _id(id), _hostname(hostname), _retry(retry), _next(0)
+    ConnInfo(uint32_t id = 0, std::string hostname = "", int type = 0, int retry = 1):
+        _id(id), _hostname(hostname), _type(type), _retry(retry), _next(0)
     {}
 
-    ConnInfo(uint32_t id, std::string hostname, std::vector<AddrInfo> & addrinfo, int retry = 1):
-        _id(id), _hostname(hostname), _retry(retry), _next(0)
+    ConnInfo(uint32_t id, std::string hostname, std::vector<AddrInfo> & addrinfo, int type = 0,  int retry = 1):
+        _id(id), _hostname(hostname), _type(type), _retry(retry), _next(0)
     {
         _addrinfo.insert(_addrinfo.end(), addrinfo.begin(), addrinfo.end());
     }
 
     ConnInfo(const ConnInfo & ci):
-        _id(ci._id), _hostname(ci._hostname), _retry(ci._retry), _next(0)
+        _id(ci._id), _hostname(ci._hostname), _type(ci._type), _retry(ci._retry), _next(0)
     {
         _addrinfo.insert(_addrinfo.end(), ci._addrinfo.begin(), ci._addrinfo.end());
     }
 
     ConnInfo & operator=(const ConnInfo & ci)
     {
-        _id = ci._id;
-        _hostname = ci._hostname;
-        _retry = ci._retry;
-        _next = ci._next;
-        _addrinfo.insert(_addrinfo.end(), ci._addrinfo.begin(), ci._addrinfo.end());
+        if(this != &ci)
+        {
+            _id = ci._id;
+            _hostname = ci._hostname;
+            _type = ci._type;
+            _retry = ci._retry;
+            _next = ci._next;
+            _addrinfo.insert(_addrinfo.end(), ci._addrinfo.begin(), ci._addrinfo.end());
+        }
         return *this;
     }
 
     uint32_t id() const { return _id; }
     const std::string & hostname() const { return _hostname; }
+    int type() const { return _type; }
+    int retry() const { return _retry; }
     const std::vector<AddrInfo> & addrinfo() const { return _addrinfo; }
     const AddrInfo & addrinfo(size_t i) const { return _addrinfo[i]; }
-    int retry() const { return _retry; }
 
     void addAddrInfo(const AddrInfo & info);
     void addAddrInfo(int sa_family, std::string ip, uint32_t port);
@@ -87,7 +95,7 @@ public:
         return _addrinfo[_next++];
     }
 
-    AddrInfo getCurrAddrInfo()
+    AddrInfo getCurrAddrInfo() const
     {
         if(_addrinfo.size() == 0)
         {
@@ -107,24 +115,32 @@ public:
         return _addrinfo[curr];
     }
 private:
-    uint32_t         _id;
-    std::string _hostname;
+    uint32_t                _id;
+    std::string             _hostname;
+    int                      _type;
+    int                      _retry;
+    size_t                  _next;
     std::vector<AddrInfo> _addrinfo;
-    int         _retry;
-    size_t      _next;
 };
 
 inline bool operator<(const ConnInfo & lhs, const ConnInfo & rhs)
 {
-    if(lhs.id() < rhs.id())
+    if(lhs.type() < rhs.type())
     {
         return true;
     }
-    else if(lhs.id() == rhs.id())
+    else if(lhs.type() == rhs.type())
     {
-        if(lhs.hostname() < rhs.hostname())
+        if(lhs.id() < rhs.id())
         {
             return true;
+        }
+        else if(lhs.id() == rhs.id())
+        {
+            if(lhs.hostname() < rhs.hostname())
+            {
+                return true;
+            }
         }
     }
 
@@ -133,7 +149,7 @@ inline bool operator<(const ConnInfo & lhs, const ConnInfo & rhs)
 
 inline bool operator==(const ConnInfo & lhs, const ConnInfo & rhs)
 {
-    return lhs.id() == rhs.id() && lhs.hostname() == rhs.hostname();
+    return lhs.type() == rhs.type() && lhs.id() == rhs.id() && lhs.hostname() == rhs.hostname();
 }
 
 

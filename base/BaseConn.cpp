@@ -75,6 +75,7 @@ void BaseConn::shutdown()
 
 void BaseConn::doAccept(TcpServer * pServer, evutil_socket_t sockfd)
 {
+    _bClosed = false;
     _sockfd = sockfd;
     _tie = shared_from_this();
     setConnectCallback(std::bind(&TcpServer::onConnect, pServer, shared_from_this()));
@@ -84,6 +85,7 @@ void BaseConn::doAccept(TcpServer * pServer, evutil_socket_t sockfd)
 
 void BaseConn::doConnect(TcpClient * pClient, const ConnInfo & ci)
 {
+    _bClosed = false;
     _connInfo = ci;
     _tie = shared_from_this();
     setConnectCallback(std::bind(&TcpClient::onConnect, pClient, shared_from_this()));
@@ -99,16 +101,10 @@ void BaseConn::onEvent(short what)
         connectInLoop();
 
     }
-    else  if(what & (BEV_EVENT_READING | BEV_EVENT_WRITING | BEV_EVENT_EOF | BEV_EVENT_ERROR | BEV_EVENT_TIMEOUT))
+    else
     {
         LOG_DEBUG("error:%d, %d, %s", what, errno, strerror(errno));
         closeInLoop();
-    }
-    else
-    {
-        //can't do here
-        LOG_ERROR("unknown error:%d, %d, %s", what, errno, strerror(errno));
-        abort();
     }
 }
 
@@ -132,15 +128,13 @@ void BaseConn::connectInLoop()
 void BaseConn::closeInLoop()
 {
     assert(_loop->isInLoopThread());
-    if(_bClosed)
+    if(closed())
     {
         return;
     }
-    _bClosed = true;
 
     std::string ip;
     uint16_t port;
-
     base::getPeerAddr(_sockfd, ip, port);
     LOG_DEBUG("close conn %s:%d this=%p, fd=%d", ip.c_str(), port, this, _sockfd);
 
@@ -159,6 +153,7 @@ void BaseConn::closeInLoop()
     setConnectCallback(ConnCallback());
     setCloseCallback(ConnCallback());
 
+    _bClosed = true;
     _bConnected = false;
     _sockfd = -1;
     _tie.reset();
