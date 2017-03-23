@@ -29,6 +29,8 @@ public:
     void sendPdu(const std::shared_ptr<void> & pdu);
 
     bool read(void * data, size_t datlen);
+    bool write(void * data, size_t datlen);
+
     void close();
     void shutdown();
 
@@ -53,10 +55,6 @@ protected:
 
     void connectInLoop();
     void closeInLoop();
-
-    void sendPduInLoop(const std::shared_ptr<void> & pdu);
-    void sendInLoop(const void *data, size_t datlen);
-    void sendInLoop(const void *data1, size_t datlen1, const void *data2, size_t datlen2);
 private:
     void BuildAccept();
     void BuildConnect();

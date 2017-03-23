@@ -27,13 +27,7 @@ BaseConn::~BaseConn()
 
 void BaseConn::sendPdu(const std::shared_ptr<void> & pdu)
 {
-    if(!connected())
-    {
-        LOG_WARN("the conn not connected");
-        return;
-    }
-
-    _loop->runInLoop(std::bind(&BaseConn::sendPduInLoop, shared_from_this(), pdu));
+    _loop->runInLoop(std::bind(&BaseConn::sendInLoop, shared_from_this(), pdu));
 }
 
 bool BaseConn::read(void * data, size_t datlen)
@@ -44,7 +38,7 @@ bool BaseConn::read(void * data, size_t datlen)
     struct evbuffer * inputBuffer = bufferevent_get_input(_bufev);
     if(!inputBuffer)
     {
-        LOG_ERROR("read error:%s", strerror(errno));
+        LOG_ERROR("read errno=%d, error:%s", errno, strerror(errno));
         close();
         return false;
     }
@@ -57,6 +51,25 @@ bool BaseConn::read(void * data, size_t datlen)
     }
 
     ASSERT_ABORT(bufferevent_read(_bufev, data, datlen) == datlen);
+    return true;
+}
+
+bool BaseConn::write(void * data, size_t datlen)
+{
+    _loop->assertInLoopThread();
+    if(!connected())
+    {
+        return false;
+    }
+
+    assert(_bufev != nullptr);
+    if(bufferevent_write(_bufev, data, datlen) != 0)
+    {
+        LOG_ERROR("write errno=%d, error:%s", errno, strerror(errno));
+        close();
+        return false;
+    }
+
     return true;
 }
 
@@ -157,44 +170,6 @@ void BaseConn::closeInLoop()
     _bConnected = false;
     _sockfd = -1;
     _tie.reset();
-}
-
-
-void BaseConn::sendPduInLoop(const std::shared_ptr<void> & pdu)
-{
-    sendInLoop(pdu);
-}
-
-void BaseConn::sendInLoop(const void *data, size_t datlen)
-{
-    assert(_loop->isInLoopThread());
-    if(!connected())
-    {
-        return;
-    }
-    assert(_bufev != nullptr);
-    if(bufferevent_write(_bufev, data, datlen) != 0)
-    {
-        LOG_ERROR("read error:%s", strerror(errno));
-        close();
-    }
-}
-
-void BaseConn::sendInLoop(const void *data1, size_t datlen1, const void *data2, size_t datlen2)
-{
-    assert(_loop->isInLoopThread());
-    if(!connected())
-    {
-        return;
-    }
-
-    assert(_bufev != nullptr);
-    if(bufferevent_write(_bufev, data1, datlen1) != 0 ||
-        bufferevent_write(_bufev, data2, datlen2) != 0)
-    {
-        LOG_ERROR("read error:%s", strerror(errno));
-        close();
-    }
 }
 
 void BaseConn::BuildAccept()
