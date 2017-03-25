@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include "CurrentThread.h"
 #include "AsyncLogging.h"
+#include "StringOps.h"
 
 static __thread char t_time[32];
 static __thread time_t t_lastSecond;
@@ -24,10 +25,10 @@ Logger::Logger(const char * fmt, ...):
     _file(""),
     _raw(true)
 {
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(_content, sizeof(_content) , fmt, args);
-    va_end(args);
+    va_list arglist;
+    va_start(arglist, fmt);
+    base::vsnprintfex(_content, fmt, arglist);
+    va_end(arglist);
 }
 
 Logger::Logger(LogLevel level, const char * file, int line, const char * func, const char * fmt, ...):
@@ -40,10 +41,10 @@ Logger::Logger(LogLevel level, const char * file, int line, const char * func, c
 {
     formatTime();
 
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(_content, sizeof(_content) , fmt, args);
-    va_end(args);
+    va_list arglist;
+    va_start(arglist, fmt);
+    base::vsnprintfex(_content, fmt, arglist);
+    va_end(arglist);
 }
 
 Logger::~Logger()
@@ -73,7 +74,7 @@ size_t Logger::format(char * data, size_t len)
 {
     if(_raw)
     {
-        snprintf(data, len, "%s\n", _content);
+        snprintf(data, len, "%s\n", _content.c_str());
     }
     else
     {
@@ -81,7 +82,7 @@ size_t Logger::format(char * data, size_t len)
                     _time,
                     LogLevelName[_level],
                     _tid,
-                    _content,
+                    _content.c_str(),
                     _file.data(),
                     _line,
                     _func);
@@ -90,3 +91,21 @@ size_t Logger::format(char * data, size_t len)
     return strlen(data);
 }
 
+void Logger::format(std::string & data)
+{
+    if(_raw)
+    {
+        base::sprintfex(data, "%s\n", _content.c_str());
+    }
+    else
+    {
+        base::sprintfex(data, "%s [%s][%d] - %s -- <%s,%d,%s>\n",
+                    _time,
+                    LogLevelName[_level],
+                    _tid,
+                    _content.c_str(),
+                    _file.data(),
+                    _line,
+                    _func);
+    }
+}

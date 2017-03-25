@@ -8,14 +8,13 @@
 #define SAFE_A2I(data) (data?atoi(data):0)
 #define SAFE_A2L(data) (data?atol(data):0)
 
-
-
 namespace base
 {
 
 void sprintfex(std::string & str, const char * format, ...);
+void vsnprintfex(std::string & str, const char * format, va_list arglist);
 void splitex(const std::string  & str, const std::string delim, std::vector<std::string> & ret);
-
+std::string splitex(const std::string & str, const std::string delim, int n);
 
 inline const char * getformat(int8_t) { return "%d"; }
 inline const char * getformat(uint8_t) { return "%u"; }

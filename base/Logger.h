@@ -65,9 +65,6 @@ typedef std::shared_ptr<Logger> LoggerPtr;
 class Logger
 {
 public:
-    static const int MAX_LOG_LEN = 2048;
-    static const int MAX_CONTENT_LEN = 1024;
-
     enum LogLevel
     {
         TRACE,
@@ -86,6 +83,7 @@ public:
     LogLevel level() const { return _level; }
     bool raw() { return _raw; }
     size_t format(char * data, size_t len);
+    void format(std::string & data);
 private:
     void formatTime();
 
@@ -96,7 +94,7 @@ private:
     int         _line;
     const char * _func;
     char        _time[64];
-    char        _content[MAX_CONTENT_LEN];
+    std::string _content;
     bool        _raw;
 };
 

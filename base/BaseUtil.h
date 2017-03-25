@@ -50,7 +50,7 @@
   @param id the server id
   @return hostname the server hostname
 */
-void writeinfo(uint32_t id, const char * hostname, const char * version, const char * productid);
+void writeinfo(const char * action, uint32_t id, const char * hostname, const char * version, const char * productid);
 
 /*
   get the log instance

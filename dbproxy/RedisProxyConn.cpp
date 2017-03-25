@@ -207,14 +207,14 @@ bool RedisProxyConn::hexists(const char * key, const char * item)
     return 0 == ret_value? false: true;
 }
 
-bool RedisProxyConn::hdel(const char * key, const ItermList & iterms)
+bool RedisProxyConn::hdel(const char * key, const ItemList & items)
 {
     if(!init())
     {
         return false;
     }
 
-    int argc = iterms.size() + 2;
+    int argc = items.size() + 2;
     const char ** argv = new const char *[argc];
     if(!argv)
     {
@@ -224,9 +224,9 @@ bool RedisProxyConn::hdel(const char * key, const ItermList & iterms)
     argv[0] = "HDEL";
     argv[1] = key;
     int index = 2;
-    for(size_t i = 0; i < iterms.size(); ++i)
+    for(size_t i = 0; i < items.size(); ++i)
     {
-        argv[index++] = iterms[i].c_str();
+        argv[index++] = items[i].c_str();
     }
 
 	redisReply* reply = (redisReply *)redisClusterCommandArgv(_pContext, argc, argv, NULL);
@@ -245,14 +245,14 @@ bool RedisProxyConn::hdel(const char * key, const ItermList & iterms)
     return 0 == ret_value? false: true;
 }
 
-bool RedisProxyConn::hmset(const char * key, const ItermList & iterms, const char * value)
+bool RedisProxyConn::hmset(const char * key, const ItemList & items, const char * value)
 {
     if(!init())
     {
         return false;
     }
 
-    int argc = iterms.size()*2 + 2;
+    int argc = items.size()*2 + 2;
     const char ** argv = new const char *[argc];
     if(!argv)
     {
@@ -262,9 +262,9 @@ bool RedisProxyConn::hmset(const char * key, const ItermList & iterms, const cha
     argv[0] = "HMSET";
     argv[1] = key;
     int index = 2;
-    for(size_t i = 0; i < iterms.size(); ++i)
+    for(size_t i = 0; i < items.size(); ++i)
     {
-        argv[index++] = iterms[i].c_str();
+        argv[index++] = items[i].c_str();
         argv[index++] = value;
     }
 
@@ -284,11 +284,11 @@ bool RedisProxyConn::hmset(const char * key, const ItermList & iterms, const cha
     return 0 == ret_value? false: true;
 }
 
-std::string RedisProxyConn::hget(const char * key, const char * iterm)
+std::string RedisProxyConn::hget(const char * key, const char * item)
 {
     std::string ret_value;
 
-    redisReply * reply = commandv("HGET %s %s", key, iterm);
+    redisReply * reply = commandv("HGET %s %s", key, item);
 	if(!reply)
     {
 		release();
@@ -304,9 +304,9 @@ std::string RedisProxyConn::hget(const char * key, const char * iterm)
 	return ret_value;
 }
 
-bool RedisProxyConn::hmget(const char * key, const ItermList & iterms, ValueMap & retValue)
+bool RedisProxyConn::hmget(const char * key, const ItemList & items, ValueMap & retValue)
 {
-    assert(key && !iterms.empty());
+    assert(key && !items.empty());
 
     if(!init())
     {
@@ -315,7 +315,7 @@ bool RedisProxyConn::hmget(const char * key, const ItermList & iterms, ValueMap 
 
     std::string strCmd = "HMGET ";
     strCmd += key;
-    for(ItermList::const_iterator it = iterms.begin(); it != iterms.end(); ++it)
+    for(ItemList::const_iterator it = items.begin(); it != items.end(); ++it)
     {
         strCmd += " " + *it;
     }
@@ -334,7 +334,7 @@ bool RedisProxyConn::hmget(const char * key, const ItermList & iterms, ValueMap 
         redisReply* child_reply = reply->element[i];
         if(child_reply->type == REDIS_REPLY_STRING)
         {
-            retValue[iterms[i]] = child_reply->str;
+            retValue[items[i]] = child_reply->str;
         }
     }
 
@@ -519,6 +519,21 @@ long RedisProxyConn::incr(const char * key)
 long RedisProxyConn::incrby(const char * key, long value)
 {
     redisReply * reply = commandv("INCRBY %s %lu", key, value);
+    if(!reply)
+    {
+        release();
+        return -1;
+    }
+
+    long ret_value = reply->integer;
+
+    freeReplyObject(reply);
+    return ret_value;
+}
+
+long RedisProxyConn::hincrby(const char * key, const char * item, long value)
+{
+    redisReply * reply = commandv("HINCRBY %s %s %lu", key, item, value);
     if(!reply)
     {
         release();

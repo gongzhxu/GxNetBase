@@ -9,7 +9,7 @@
 #include <hiredis-vip/hircluster.h>
 
 typedef std::vector<std::string> KeyList;
-typedef std::vector<std::string> ItermList;
+typedef std::vector<std::string> ItemList;
 typedef std::map<std::string, std::string> ValueMap;
 typedef std::map<uint64_t, uint64_t> LONGValueMap;
 typedef std::vector<std::string> ValueList;
@@ -38,10 +38,10 @@ public:
     std::string get(const char * key);
     bool mget(const KeyList & keys, ValueMap & retValue);
     bool hexists(const char * key, const char * item);
-    bool hdel(const char * key, const ItermList & iterms);
-    bool hmset(const char * key, const ItermList & iterms, const char * value);
-    std::string hget(const char * key, const char * iterm);
-    bool hmget(const char * key, const ItermList & items, ValueMap & retValue);
+    bool hdel(const char * key, const ItemList & items);
+    bool hmset(const char * key, const ItemList & items, const char * value);
+    std::string hget(const char * key, const char * item);
+    bool hmget(const char * key, const ItemList & items, ValueMap & retValue);
     bool hgetall(const char * key, ValueMap & retValue);
     bool hgetall(const char * key, LONGValueMap & retValue);
     bool hgetall(const char * key, LONGValueList & retValue, bool bKey = true);
@@ -51,6 +51,7 @@ public:
     long scard(const char * key);
     long incr(const char * key);
     long incrby(const char * key, long value);
+    long hincrby(const char * key, const char * item, long value);
     bool expire_day(const char * key, int days);
     bool persist(const char * key);
 private:

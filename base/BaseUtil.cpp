@@ -5,15 +5,22 @@
 
 #define MAX_WRITE_INFO 32
 
-void writeinfo(uint32_t id, const char * hostname, const char * version, const char * productid)
+void writeinfo(const char * action, uint32_t id, const char * hostname, const char * version, const char * productid)
 {
     std::vector<std::string> strMsgs;
 
     {
         std::string strMsg;
-        base::sprintfex(strMsg, "%s - pid=%d, id=%d, hostname=%s, version=%s, productid=%s\n", TimeStamp::now().format().c_str(), getpid(), id, hostname, version, productid);
-        strMsgs.emplace_back(strMsg);
+        base::sprintfex(strMsg, "%s - action=%s, pid=%d, id=%d, hostname=%s, version=%s, productid=%s\n",
+                                        TimeStamp::now().format().c_str(),
+                                        action,
+                                        getpid(),
+                                        id,
+                                        hostname,
+                                        version,
+                                        productid);
 
+        strMsgs.emplace_back(strMsg);
         FILE * fp = fopen("server.pid", "r");
         if(fp)
         {

@@ -63,8 +63,7 @@ private:
     template<typename T>
     void onAccept(evutil_socket_t sockfd)
     {
-        base::setReuseAddr(sockfd, true);
-        base::setReusePort(sockfd, true);
+        //base::setReusePort(sockfd, true);
         base::setTcpNoDely(sockfd, true);
         base::setKeepAlive(sockfd, true);
         BaseConnPtr  pConn(new T);

@@ -86,17 +86,17 @@ void AsyncLogging::threadFunc()
 
         Buffer outputBuf; // the file log buffer
         Buffer printBuf; // the screen print buffer
-        char data[Logger::MAX_LOG_LEN] = {0};
+        std::string data;
 
         for(auto it = loggers.begin(); it != loggers.end();)
         {
             LoggerPtr pLogger = *(it++);
-            size_t len = pLogger->format(data, Logger::MAX_LOG_LEN);
+            pLogger->format(data);
 
-            outputBuf.append(data, len);
+            outputBuf.append(data.c_str(), data.size());
             if((_print && pLogger->level() == Logger::INFO) || pLogger->raw())
             {
-                printBuf.append(data, len);
+                printBuf.append(data.c_str(), data.size());
             }
 
             //write the log buffer to destination

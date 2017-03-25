@@ -6,19 +6,39 @@ void base::sprintfex(std::string & str, const char * format, ...)
 {
 
     int len = 0;
-    va_list arglist1;
+    va_list arglist1, arglist2;
     va_start(arglist1, format);
+    va_copy(arglist2, arglist1);
 
     str.resize(128);
     len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist1);
     if(static_cast<size_t>(len) >= str.size())
     {
         str.resize(len+1);
-
-        va_list arglist2;
-        va_start(arglist2, format);
         len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist2);
-        va_end(arglist2);
+    }
+
+    if(len >= 0)
+    {
+        str.resize(len);
+    }
+
+    va_end(arglist1);
+    va_end(arglist2);
+}
+
+void base::vsnprintfex(std::string & str, const char * format, va_list arglist)
+{
+    int len = 0;
+    va_list arglist1;
+    va_copy(arglist1, arglist);
+
+    str.resize(128);
+    len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist);
+    if(static_cast<size_t>(len) >= str.size())
+    {
+        str.resize(len+1);
+        len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist1);
     }
 
     if(len >= 0)
@@ -45,14 +65,62 @@ void base::splitex(const std::string & str, const std::string delim, std::vector
         index=str.find_first_of(delim,last);
     }
 
-    if(index-last > 0)
+    std::string str1 = str.substr(last);
+    if(!str1.empty())
     {
-        std::string str1 = str.substr(last, index-last);
-        if(!str1.empty())
+        ret.emplace_back(str1);
+    }
+}
+
+std::string base::splitex(const std::string & str, const std::string delim, int n)
+{
+    std::string ret;
+    if(n > 0)
+    {
+        int i = 0;
+        size_t last = 0;
+        size_t index=str.find_first_of(delim,last);
+        while(index != std::string::npos)
         {
-            ret.emplace_back(str1);
+            if(++i == n)
+            {
+                ret = str.substr(last, index-last);
+                break;
+            }
+
+            last=index+1;
+            index=str.find_first_of(delim,last);
+        }
+
+        if(++i == n)
+        {
+            ret = str.substr(last);
         }
     }
+    else if(n < 0)
+    {
+        int i = 0;
+        size_t last = str.size();
+        size_t index=str.find_last_of(delim,last);
+        while(index != std::string::npos)
+        {
+            if(++i == -n)
+            {
+                ret = str.substr(index+1, last-index);
+                break;
+            }
+
+            last=index-1;
+            index=str.find_last_of(delim,last);
+        }
+
+        if(++i == -n)
+        {
+            ret = str.substr(0, last-1);
+        }
+    }
+
+    return ret;
 }
 
 std::string base::utf8_substr(const std::string & str, size_t pos, size_t len)
