@@ -27,7 +27,7 @@ Logger::Logger(const char * fmt, ...):
 {
     va_list arglist;
     va_start(arglist, fmt);
-    base::vsnprintfex(_content, fmt, arglist);
+    base::vsprintfex(_content, fmt, arglist);
     va_end(arglist);
 }
 
@@ -43,7 +43,7 @@ Logger::Logger(LogLevel level, const char * file, int line, const char * func, c
 
     va_list arglist;
     va_start(arglist, fmt);
-    base::vsnprintfex(_content, fmt, arglist);
+    base::vsprintfex(_content, fmt, arglist);
     va_end(arglist);
 }
 

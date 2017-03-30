@@ -47,34 +47,63 @@ void RedisProxyConn::release()
 {
     if(_pContext)
     {
-        LOG_DEBUG("redisCommand failed:%s", _pContext->errstr);
+        if(_pContext->err)
+        {
+            LOG_DEBUG("redisCommand failed:%s", _pContext->errstr);
+        }
         redisClusterFree(_pContext);
         _pContext = nullptr;
     }
 }
 
-bool RedisProxyConn::command(const char *format, ...)
+bool RedisProxyConn::command(const char * format, ...)
 {
 	if(!init())
     {
         return false;
     }
 
+    std::string strCmd;
+    va_list arglist;
+    va_start(arglist, format);
+    base::vsprintfex(strCmd, format, arglist);
+    va_end(arglist);
 
-#if 1
+    LOG_DEBUG("strCmd:%s", strCmd.c_str());
+
+    bool bValue = false;
+	redisReply * reply = (redisReply *)redisClusterCommand(_pContext, strCmd.c_str());
+	if(!reply)
     {
+        release();
+    }
+    else
+    {
+        freeReplyObject(reply);
+        bValue = true;
+    }
+	return bValue;
+}
+
+bool RedisProxyConn::vcommand(const char * format, ...)
+{
+    if(!init())
+    {
+        return false;
+    }
+
+    {
+        std::string strCmd;
         va_list arglist;
         va_start(arglist, format);
-        char szCmd[1024] = {0};
-        vsnprintf(szCmd, 1024, format, arglist);
-        LOG_DEBUG("szCmd:%s", szCmd);
+        base::vsprintfex(strCmd, format, arglist);
         va_end(arglist);
+
+        LOG_DEBUG("strCmd:%s", strCmd.c_str());
     }
-#endif // 1
 
     va_list arglist;
     va_start(arglist, format);
-
     bool bValue = false;
 	redisReply * reply = (redisReply *)redisClustervCommand(_pContext, format, arglist);
 	if(!reply)
@@ -86,29 +115,27 @@ bool RedisProxyConn::command(const char *format, ...)
         freeReplyObject(reply);
         bValue = true;
     }
+
     va_end(arglist);
 	return bValue;
 }
 
-
-redisReply * RedisProxyConn::commandv(const char * format, ...)
+redisReply * RedisProxyConn::_vcommand(const char * format, ...)
 {
     if(!init())
     {
         return nullptr;
     }
 
-
-#if 1
     {
+        std::string strCmd;
         va_list arglist;
         va_start(arglist, format);
-        char szCmd[1024] = {0};
-        vsnprintf(szCmd, 1024, format, arglist);
-        LOG_DEBUG("szCmd:%s", szCmd);
+        base::vsprintfex(strCmd, format, arglist);
         va_end(arglist);
+
+        LOG_DEBUG("strCmd:%s", strCmd.c_str());
     }
-#endif // 1
 
     va_list arglist;
     va_start(arglist, format);
@@ -141,7 +168,7 @@ std::string RedisProxyConn::get(const char * key)
 {
     std::string ret_value;
 
-    redisReply * reply = commandv("GET %s", key);
+    redisReply * reply = _vcommand("GET %s", key);
 	if(!reply)
     {
 		release();
@@ -195,7 +222,7 @@ bool RedisProxyConn::mget(const KeyList & keys, ValueMap & retValue)
 
 bool RedisProxyConn::hexists(const char * key, const char * item)
 {
-    redisReply * reply = commandv("HEXISTS %s %s", key, item);
+    redisReply * reply = _vcommand("HEXISTS %s %s", key, item);
     if(!reply)
     {
         release();
@@ -327,7 +354,7 @@ std::string RedisProxyConn::hget(const char * key, const char * item)
 {
     std::string ret_value;
 
-    redisReply * reply = commandv("HGET %s %s", key, item);
+    redisReply * reply = _vcommand("HGET %s %s", key, item);
 	if(!reply)
     {
 		release();
@@ -384,7 +411,7 @@ bool RedisProxyConn::hmget(const char * key, const ItemList & items, ValueMap & 
 bool RedisProxyConn::hgetall(const char * key, ValueMap & retValue)
 {
     bool bValue = false;
-	redisReply * reply = commandv("HGETALL %s", key);
+	redisReply * reply = _vcommand("HGETALL %s", key);
 	if(!reply)
 	{
 		release();
@@ -414,7 +441,7 @@ bool RedisProxyConn::hgetall(const char * key, ValueMap & retValue)
 bool RedisProxyConn::hgetall(const char * key, LONGValueMap & retValue)
 {
     bool bValue = false;
-	redisReply * reply = commandv("HGETALL %s", key);
+	redisReply * reply = _vcommand("HGETALL %s", key);
 	if(!reply)
 	{
 		release();
@@ -442,7 +469,7 @@ bool RedisProxyConn::hgetall(const char * key, LONGValueMap & retValue)
 bool RedisProxyConn::hgetall(const char * key, LONGValueList & retValue, bool bKey)
 {
     bool bValue = false;
-	redisReply * reply = commandv("HGETALL %s", key);
+	redisReply * reply = _vcommand("HGETALL %s", key);
 	if(!reply)
 	{
 		release();
@@ -468,7 +495,7 @@ bool RedisProxyConn::hgetall(const char * key, LONGValueList & retValue, bool bK
 
 bool RedisProxyConn::smembers(const char * key, ValueList & retValue)
 {
-    redisReply * reply = commandv("SMEMBERS %s", key);
+    redisReply * reply = _vcommand("SMEMBERS %s", key);
     if(!reply)
     {
         release();
@@ -490,7 +517,7 @@ bool RedisProxyConn::smembers(const char * key, ValueList & retValue)
 
 bool RedisProxyConn::smembers(const char * key, LONGValueList & retValue)
 {
-    redisReply * reply = commandv("SMEMBERS %s", key);
+    redisReply * reply = _vcommand("SMEMBERS %s", key);
     if(!reply)
     {
         release();
@@ -512,7 +539,7 @@ bool RedisProxyConn::smembers(const char * key, LONGValueList & retValue)
 
 bool RedisProxyConn::sismember(const char * key, long item)
 {
-    redisReply * reply = commandv("SISMEMBER %s %lu", key, item);
+    redisReply * reply = _vcommand("SISMEMBER %s %lu", key, item);
     if(!reply)
     {
         release();
@@ -527,7 +554,7 @@ bool RedisProxyConn::sismember(const char * key, long item)
 
 long RedisProxyConn::scard(const char * key)
 {
-    redisReply * reply = commandv("SCARD %s", key);
+    redisReply * reply = _vcommand("SCARD %s", key);
     if(!reply)
     {
         release();
@@ -542,7 +569,7 @@ long RedisProxyConn::scard(const char * key)
 
 long RedisProxyConn::incr(const char * key)
 {
-    redisReply * reply = commandv("INCR %s", key);
+    redisReply * reply = _vcommand("INCR %s", key);
     if(!reply)
     {
         release();
@@ -557,7 +584,7 @@ long RedisProxyConn::incr(const char * key)
 
 long RedisProxyConn::incrby(const char * key, long value)
 {
-    redisReply * reply = commandv("INCRBY %s %lu", key, value);
+    redisReply * reply = _vcommand("INCRBY %s %lu", key, value);
     if(!reply)
     {
         release();
@@ -572,7 +599,7 @@ long RedisProxyConn::incrby(const char * key, long value)
 
 long RedisProxyConn::hincrby(const char * key, const char * item, long value)
 {
-    redisReply * reply = commandv("HINCRBY %s %s %lu", key, item, value);
+    redisReply * reply = _vcommand("HINCRBY %s %s %lu", key, item, value);
     if(!reply)
     {
         release();
@@ -587,7 +614,7 @@ long RedisProxyConn::hincrby(const char * key, const char * item, long value)
 
 bool RedisProxyConn::expire_day(const char * key, int days)
 {
-    redisReply * reply = commandv("EXPIRE %s %lu", key, 86400*days);
+    redisReply * reply = _vcommand("EXPIRE %s %lu", key, 86400*days);
     if(!reply)
     {
         release();
@@ -602,7 +629,7 @@ bool RedisProxyConn::expire_day(const char * key, int days)
 
 bool RedisProxyConn::persist(const char * key)
 {
-    redisReply * reply = commandv("PERSIST %s", key);
+    redisReply * reply = _vcommand("PERSIST %s", key);
     if(!reply)
     {
         release();

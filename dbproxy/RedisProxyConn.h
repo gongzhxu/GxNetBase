@@ -30,9 +30,8 @@ public:
     bool init();
     void release();
 
-public:
     bool command(const char * format, ...);
-    redisReply * commandv(const char * format, ...);
+    bool vcommand(const char * format, ...);
 
     bool exists(const char * key);
     std::string get(const char * key);
@@ -55,6 +54,9 @@ public:
     long hincrby(const char * key, const char * item, long value);
     bool expire_day(const char * key, int days);
     bool persist(const char * key);
+private:
+    redisReply * _vcommand(const char * format, ...);
+
 private:
     std::string           _addrs;
     redisClusterContext * _pContext;

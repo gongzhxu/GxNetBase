@@ -4,7 +4,6 @@
 
 void base::sprintfex(std::string & str, const char * format, ...)
 {
-
     int len = 0;
     va_list arglist1, arglist2;
     va_start(arglist1, format);
@@ -27,7 +26,35 @@ void base::sprintfex(std::string & str, const char * format, ...)
     va_end(arglist2);
 }
 
-void base::vsnprintfex(std::string & str, const char * format, va_list arglist)
+std::string base::strprintfex(const char * format, ...)
+{
+    std::string str;
+
+    int len = 0;
+    va_list arglist1, arglist2;
+    va_start(arglist1, format);
+    va_copy(arglist2, arglist1);
+
+    str.resize(128);
+    len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist1);
+    if(static_cast<size_t>(len) >= str.size())
+    {
+        str.resize(len+1);
+        len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist2);
+    }
+
+    if(len >= 0)
+    {
+        str.resize(len);
+    }
+
+    va_end(arglist1);
+    va_end(arglist2);
+
+    return str;
+}
+
+void base::vsprintfex(std::string & str, const char * format, va_list arglist)
 {
     int len = 0;
     va_list arglist1;
@@ -47,6 +74,31 @@ void base::vsnprintfex(std::string & str, const char * format, va_list arglist)
     }
 
     va_end(arglist1);
+}
+
+std::string base::vstrprintfex(const char * format, va_list arglist)
+{
+    std::string str;
+
+    int len = 0;
+    va_list arglist1;
+    va_copy(arglist1, arglist);
+
+    str.resize(128);
+    len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist);
+    if(static_cast<size_t>(len) >= str.size())
+    {
+        str.resize(len+1);
+        len = vsnprintf(const_cast<char *>(str.c_str()), str.size(), format, arglist1);
+    }
+
+    if(len >= 0)
+    {
+        str.resize(len);
+    }
+
+    va_end(arglist1);
+    return str;
 }
 
 void base::splitex(const std::string & str, const std::string delim, std::vector<std::string> & ret)

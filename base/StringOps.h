@@ -12,7 +12,9 @@ namespace base
 {
 
 void sprintfex(std::string & str, const char * format, ...);
-void vsnprintfex(std::string & str, const char * format, va_list arglist);
+std::string strprintfex(const char * format, ...);
+void vsprintfex(std::string & str, const char * format, va_list arglist);
+std::string vstrprintfex(const char * format, va_list arglist);
 void splitex(const std::string  & str, const std::string delim, std::vector<std::string> & ret);
 std::string splitex(const std::string & str, const std::string delim, int n);
 
