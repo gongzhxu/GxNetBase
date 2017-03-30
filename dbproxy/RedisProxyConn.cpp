@@ -284,6 +284,45 @@ bool RedisProxyConn::hmset(const char * key, const ItemList & items, const char 
     return 0 == ret_value? false: true;
 }
 
+bool RedisProxyConn::hmset(const char * key, const ValueMap & valueMap)
+{
+    if(!init())
+    {
+        return false;
+    }
+
+    int argc = valueMap.size()*2 + 2;
+    const char ** argv = new const char *[argc];
+    if(!argv)
+    {
+        return false;
+    }
+
+    argv[0] = "HMSET";
+    argv[1] = key;
+    int index = 2;
+    for(auto it = valueMap.begin(); it != valueMap.end(); ++it)
+    {
+        argv[index++] = it->first.c_str();
+        argv[index++] = it->second.c_str();
+    }
+
+	redisReply* reply = (redisReply *)redisClusterCommandArgv(_pContext, argc, argv, NULL);
+	if (!reply)
+    {
+		delete []argv;
+		release();
+        return false;
+	}
+
+	delete []argv;
+
+	long ret_value = reply->integer;
+    freeReplyObject(reply);
+
+    return 0 == ret_value? false: true;
+}
+
 std::string RedisProxyConn::hget(const char * key, const char * item)
 {
     std::string ret_value;

@@ -40,6 +40,7 @@ public:
     bool hexists(const char * key, const char * item);
     bool hdel(const char * key, const ItemList & items);
     bool hmset(const char * key, const ItemList & items, const char * value);
+    bool hmset(const char * key, const ValueMap & valueMap);
     std::string hget(const char * key, const char * item);
     bool hmget(const char * key, const ItemList & items, ValueMap & retValue);
     bool hgetall(const char * key, ValueMap & retValue);
