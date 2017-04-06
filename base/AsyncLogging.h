@@ -9,6 +9,7 @@
 #include <condition_variable>
 
 #include "Logger.h"
+class LogFile;
 
 class AsyncLogging
 {
@@ -18,26 +19,25 @@ public:
     AsyncLogging(const char * fileName);
     ~AsyncLogging();
 public:
+    void loadConfig(const char * fileName);
     void append(LoggerPtr && logger);
-    Logger::LogLevel getLogLevel() const { return _level; }
+    int getLogLevel() const { return _level; }
+
 private:
     void threadFunc();
 
 private:
-    std::string _logFolder; // log folder
-    std::string _baseName; // log prefix name
-    Logger::LogLevel _level; // log level
-    size_t _rollSize; // roll size(bytes)
-    int _flushInterval; // flush interval
-    int _autoRm; // auto remove time(days)
-    bool    _print; // print or not
-    bool _running; // just a flag indicate the thread is running
+    int              _flushInterval;
+    int              _level; // log level
+    bool            _print; // print or not
+    bool            _running; // just a flag indicate the thread is running
 
     std::thread _thread;
     std::mutex _mutex;
     std::condition_variable _cond;
 
-    LoggerList _loggers; // logger list
+    LoggerList                 _loggers; // logger list
+    std::unique_ptr<LogFile> _output;
 };
 
 #endif // _ASYNC_LOGGING_H

@@ -6,22 +6,15 @@
 #include "FileOps.h"
 #include "TimeStamp.h"
 
-LogFile::LogFile(const std::string & logFolder,
-                 const std::string & baseName,
-                 size_t rollSize,
-                 int flushInterval,
-                 int autoRm):
-    _logFolder(logFolder),
-    _baseName(baseName),
-    _rollSize(rollSize),
-    _flushInterval(flushInterval),
-    _autoRm(autoRm),
+LogFile::LogFile():
+    _logFolder("log"),
+    _baseName("default"),
+    _rollSize(DEF_ROLLSIZE),
+    _flushInterval(DEF_FLUSHINTERVAL),
+    _autoRm(DEF_AUTORM*DAYILY_SECONDS),
     _lastFlush(0)
 {
-    time_t now = time(NULL) + 8*3600;
 
-    rmFile(now);
-    rollFile(now);
 }
 
 void LogFile::append(const char * logline)
@@ -36,23 +29,21 @@ void LogFile::append(const char * logline, int len)
     struct tm  tm_time;
     gmtime_r(&now, &tm_time);
     int nowDay = tm_time.tm_mday;
+    if(_fileDay != nowDay || !_file || _file->getWrittenBytes() + len > _rollSize)
+    {
+        rmFile(now);
+        rollFile(now);
+    }
+
     if(len > 0)
     {
         _file->fwrite(logline, len);
     }
 
-    if(_file->getWrittenBytes() > _rollSize || _fileDay != nowDay)
+    if(now - _lastFlush > _flushInterval)
     {
-        rmFile(now);
-        rollFile(now);
-    }
-    else
-    {
-        if(now - _lastFlush > _flushInterval)
-        {
-            _lastFlush = now;
-            _file->fflush();
-        }
+        _lastFlush = now;
+        _file->fflush();
     }
 }
 

@@ -12,18 +12,24 @@
 #include <unistd.h>
 #include "BaseUtil.h"
 
+#define DEF_ROLLSIZE 1024*1024*1024
+#define DEF_FLUSHINTERVAL 1000
+#define DEF_AUTORM 15
+#define DAYILY_SECONDS 24*60*60
+
 class LogFile
 {
 public:
-    LogFile(const std::string & logFolder,
-            const std::string & baseName,
-            size_t rollSize,
-            int flushInterval,
-            int autoRm);
-public:
+    LogFile();
+
     void append(const char * logline);
     void append(const char * logline, int len);
 
+    void setLogFolder(const std::string & logFolder) { _logFolder = logFolder; }
+    void setBaseName(const std::string & baseName) { _baseName = baseName; }
+    void setRollSize(size_t rollSize) { _rollSize = rollSize; }
+    void setFlushInterval(int flushInterval) { _flushInterval = flushInterval; }
+    void setAutoRm(int autoRm) { _autoRm = autoRm; }
 private:
     void rollFile(const time_t & time);
     void rmFile(const time_t & time);
@@ -68,11 +74,12 @@ private:
     };
 
 private:
-    const std::string _logFolder;
-    const std::string _baseName;
-    const size_t _rollSize;
-    const int _flushInterval;
-    const int _autoRm;
+    std::string _logFolder;
+    std::string _baseName;
+    size_t      _rollSize;
+    int         _flushInterval;
+    int         _autoRm;
+
     time_t _lastFlush;
     int _fileDay;
 

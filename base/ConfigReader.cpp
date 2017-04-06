@@ -83,7 +83,7 @@ void ConfigReader::_LoadFile()
 	FILE* fp = fopen(_cfgFile.c_str(), "r");
 	if (!fp)
 	{
-        ABORT_MSG("open configfile=%s,error=%s\n", _cfgFile.c_str(), strerror(errno));
+        ASSERT_MSG("open configfile=%s,error=%s\n", _cfgFile.c_str(), strerror(errno));
 		return;
 	}
 
