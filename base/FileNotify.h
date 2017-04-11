@@ -49,12 +49,10 @@ public:
     bool addWatch(const char * name, const Functor && cb);
     void rmWatch(const char * name);
 
-
+ private:
     void onRead();
     static void read_cb(struct bufferevent * bev, void * ctx);
- private:
     bool read(void * data, size_t datlen);
-
 
 private:
     EventLoop *            _loop;

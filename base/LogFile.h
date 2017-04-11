@@ -41,31 +41,46 @@ private:
     public:
         File(std::string & filename):
             _filename(filename),
-            _fp(::fopen(filename.c_str(), "a")),
+            _fp(::fopen(_filename.c_str(), "a")),
             _writtenBytes(0)
             {
-                if(!_fp)
-                {
-                    ABORT_MSG("create logfile=%s,error=%s\n", filename.c_str(), strerror(errno));
-                }
+                if(!_fp) ABORT_MSG("create logfile=%s,error=%s\n", _filename.c_str(), strerror(errno));
             }
 
-        ~File() { ::fclose(_fp); }
+        ~File() { fclose(); }
     public:
         size_t getWrittenBytes() { return _writtenBytes; }
 
         size_t fwrite(const char * logline, const size_t len)
         {
-            _fp = ::freopen(_filename.c_str(), "a", _fp);
+            if(!fopen())
+            {
+                return 0;
+            }
+
             _writtenBytes += len;
             return ::fwrite(logline, 1, len, _fp);
         }
 
-        int ferror() { return ::ferror(_fp); }
-
         void fflush()
         {
-            ::fflush(_fp);
+            if(_fp) ::fflush(_fp);
+        }
+
+        void fclose()
+        {
+            if(_fp) ::fclose(_fp);
+        }
+
+        bool fopen()
+        {
+            if(!_fp || !base::isFile(_filename))
+            {
+                fclose();
+                _fp = ::fopen(_filename.c_str(), "a");
+            }
+
+            return _fp != nullptr;
         }
     private:
         std::string _filename;
