@@ -13,7 +13,7 @@
 #include "BaseUtil.h"
 
 #define DEF_ROLLSIZE 1024*1024*1024
-#define DEF_FLUSHINTERVAL 1000
+#define DEF_FLUSHINTERVAL 1
 #define DEF_AUTORM 15
 #define DAYILY_SECONDS 24*60*60
 

@@ -83,7 +83,7 @@ void AsyncLogging::threadFunc()
                 }
 
                 _output->append(NULL, 0);
-                _cond.wait_for(lock, std::chrono::milliseconds(_flushInterval));
+                _cond.wait_for(lock, std::chrono::seconds(_flushInterval));
             }
 
             loggers.swap(_loggers);
