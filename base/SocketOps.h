@@ -16,21 +16,21 @@ union SockAddr
     struct sockaddr_in6 addr6;
 };
 
-int setAddr(int sa_family, const char * ip, const uint16_t port, base::SockAddr * pAddr);
-void getLocalAddr(int sockfd, std::string & ip, uint16_t & port);
-void getPeerAddr(int sockfd, std::string & ip, uint16_t & port);
+std::string getHostMac();
+std::string getHostName();
+
+int makeAddr(const AddrInfo & addrInfo, sockaddr_storage & storage);
+AddrInfo getAddr(struct sockaddr * sockAddr, int sockLen);
+
+AddrInfo getLocalAddr(int sockfd);
+AddrInfo getPeerAddr(int sockfd);
 void setReuseAddr(int sockfd, bool on);
 void setReusePort(int sockfd, bool on);
 void setTcpNoDely(int sockfd, bool on);
 void setKeepAlive(int sockfd, bool on, int keepIdle = 60, int keepInterval = 10, int keepCount = 6);
 bool isZeroAddr(int sa_family, std::string & ip);
-std::string getHostMac();
-std::string getHostName();
+
 void getAddrInfo(std::vector<AddrInfo> & addrInfos, uint32_t port = 0, bool bIpv6 = false);
-
 }
-
-
-
 
 #endif // _SOCKET_OPT_H_

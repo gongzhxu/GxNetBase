@@ -12,7 +12,6 @@ BaseConn::BaseConn(EventLoop * loop):
     _bConnected(false),
     _bClosed(false),
     _bShutdownd(false),
-    _sockfd(-1),
     _bufev(nullptr),
     _tie(nullptr)
 {
@@ -27,7 +26,7 @@ BaseConn::~BaseConn()
 
 void BaseConn::sendPdu(const std::shared_ptr<void> & pdu)
 {
-    _loop->runInLoop(std::bind(&BaseConn::sendInLoop, shared_from_this(), pdu));
+    _loop->runInLoop(std::bind(&BaseConn::onWrite, shared_from_this(), pdu));
 }
 
 bool BaseConn::read(void * data, size_t datlen)
@@ -86,23 +85,19 @@ void BaseConn::shutdown()
     _loop->queueInLoop(std::bind(&BaseConn::closeInLoop, shared_from_this()));
 }
 
-void BaseConn::doAccept(TcpServer * pServer, evutil_socket_t sockfd)
-{
-    _bClosed = false;
-    _sockfd = sockfd;
-    _tie = shared_from_this();
-    setConnectCallback(std::bind(&TcpServer::onConnect, pServer, shared_from_this()));
-    setCloseCallback(std::bind(&TcpServer::onClose, pServer, shared_from_this()));
-    _loop->runInLoop(std::bind(&BaseConn::BuildAccept, shared_from_this()));
-}
-
-void BaseConn::doConnect(TcpClient * pClient, const ConnInfo & ci)
+void BaseConn::doAccept(const ConnInfo & ci)
 {
     _bClosed = false;
     _connInfo = ci;
     _tie = shared_from_this();
-    setConnectCallback(std::bind(&TcpClient::onConnect, pClient, shared_from_this()));
-    setCloseCallback(std::bind(&TcpClient::onClose, pClient, shared_from_this()));
+    _loop->runInLoop(std::bind(&BaseConn::BuildAccept, shared_from_this()));
+}
+
+void BaseConn::doConnect(const ConnInfo & ci)
+{
+    _bClosed = false;
+    _connInfo = ci;
+    _tie = shared_from_this();
     _loop->runInLoop(std::bind(&BaseConn::BuildConnect, shared_from_this()));
 }
 
@@ -124,16 +119,14 @@ void BaseConn::onEvent(short what)
 void BaseConn::connectInLoop()
 {
     assert(_loop->isInLoopThread());
-    _sockfd = bufferevent_getfd(_bufev);
     _bConnected = true;
-    assert(_connect_cb);
-    _connect_cb(shared_from_this());
+    if(_connect_cb)
+    {
+        _connect_cb(shared_from_this());
+    }
 
-    std::string ip;
-    uint16_t port;
-
-    base::getPeerAddr(_sockfd, ip, port);
-    LOG_DEBUG("new conn %s:%d this=%p, fd=%d", ip.c_str(), port, this, _sockfd);
+    const AddrInfo & addrInfo = _connInfo.getCurrAddrInfo();
+    LOG_DEBUG("new conn this=%p, sa_family=%d, ip=%s, port=%d , fd=%d", this, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), _connInfo.fd());
 
     onConnect();
 }
@@ -146,15 +139,15 @@ void BaseConn::closeInLoop()
         return;
     }
 
-    std::string ip;
-    uint16_t port;
-    base::getPeerAddr(_sockfd, ip, port);
-    LOG_DEBUG("close conn %s:%d this=%p, fd=%d", ip.c_str(), port, this, _sockfd);
+    const AddrInfo & addrInfo = _connInfo.getCurrAddrInfo();
+    LOG_DEBUG("del conn this=%p, sa_family=%d, ip=%s, port=%d , fd=%d", this, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), _connInfo.fd());
 
     onClose();
 
-    assert(_close_cb);
-    _close_cb(shared_from_this());
+    if(_close_cb)
+    {
+        _close_cb(shared_from_this());
+    }
 
     if(_bufev)
     {
@@ -168,7 +161,6 @@ void BaseConn::closeInLoop()
 
     _bClosed = true;
     _bConnected = false;
-    _sockfd = -1;
     _tie.reset();
 }
 
@@ -179,14 +171,14 @@ void BaseConn::BuildAccept()
 
     do
     {
-        _bufev = bufferevent_socket_new(_loop->get_event(), _sockfd, BEV_OPT_CLOSE_ON_FREE);
+        _bufev = bufferevent_socket_new(_loop->get_event(), _connInfo.fd(), BEV_OPT_CLOSE_ON_FREE);
         if(_bufev == nullptr)
         {
             LOG_ERROR("memory error on  bufferevent_socket_new");
             break;
         }
 
-        bufferevent_setcb(_bufev, read_cb, write_cb, event_cb, this);
+        bufferevent_setcb(_bufev, read_cb, nullptr, event_cb, this);
         int ret = 0;
         ret = bufferevent_enable(_bufev, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
         if(ret != 0)
@@ -216,7 +208,7 @@ void BaseConn::BuildConnect()
             break;
         }
 
-        bufferevent_setcb(_bufev, read_cb, write_cb, event_cb, this);
+        bufferevent_setcb(_bufev, read_cb, nullptr, event_cb, this);
 
         int ret = 0;
         ret = bufferevent_enable(_bufev, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
@@ -226,7 +218,7 @@ void BaseConn::BuildConnect()
             break;
         }
         //FIXME: please use async resolve the hostname
-        AddrInfo addrInfo = _connInfo.getNextAddrInfo();
+        const AddrInfo & addrInfo = _connInfo.getNextAddrInfo();
         LOG_INFO("begin connect sa_family=%d, ip=%s, port=%d", addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
         ret = bufferevent_socket_connect_hostname(_bufev, nullptr, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
         if(ret != 0)
@@ -234,6 +226,8 @@ void BaseConn::BuildConnect()
             LOG_ERROR("bufferevent_socket_connect_hostname error:%d", ret);
             break;
         }
+
+        _connInfo.setFd(bufferevent_getfd(_bufev));
         LOG_DEBUG("connect the server...");
         return;
 
@@ -247,12 +241,6 @@ void BaseConn::read_cb(struct bufferevent * bev, void * ctx)
 {
     NOTUSED_ARG(bev);
     static_cast<BaseConn *>(ctx)->onRead();
-}
-
-void BaseConn::write_cb(struct bufferevent * bev, void *ctx)
-{
-    NOTUSED_ARG(bev);
-    static_cast<BaseConn *>(ctx)->onWrite();
 }
 
 void BaseConn::event_cb(struct bufferevent * bev, short what, void * ctx)

@@ -8,76 +8,145 @@
 
 #include "BaseUtil.h"
 
-int base::setAddr(int sa_family, const char * ip, const uint16_t port, base::SockAddr * pAddr)
+std::string base::getHostMac()
 {
-    memset(pAddr, 0, sizeof(base::SockAddr));
-
-    if(sa_family == AF_INET)
+    struct ifaddrs * ifaddrsVar = nullptr;
+    getifaddrs(&ifaddrsVar);
+    if(ifaddrsVar == nullptr)
     {
-        pAddr->addr.sin_family = sa_family;
-        pAddr->addr.sin_port = htons(port);
-        pAddr->addr.sin_addr.s_addr = inet_addr(ip);
-        return sizeof(pAddr->addr);
+        return "";
     }
-    else if(sa_family == AF_INET6)
+
+    int sockfd;
+    if((sockfd=socket(AF_INET,SOCK_STREAM,0)) < 0)
     {
-        pAddr->addr6.sin6_family = sa_family;
-        pAddr->addr6.sin6_port = htons(port);
-        inet_pton(AF_INET6, ip, (void *)&(pAddr->addr6.sin6_addr));
-        return sizeof(pAddr->addr6);
+        return "";
+    }
+
+    char szMac[16] = {0};
+
+    while(ifaddrsVar!=NULL)
+    {
+        memset(szMac, 0, sizeof(szMac));
+        struct ifreq ifreqVar;
+        strncpy(ifreqVar.ifr_name, ifaddrsVar->ifa_name, sizeof(ifreqVar.ifr_name));
+
+        if(ioctl(sockfd, SIOCGIFHWADDR, &ifreqVar) == 0)
+        {
+            snprintf(szMac, sizeof(szMac), "%02x%02x%02x%02x%02x%02x",
+                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[0],
+                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[1],
+                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[2],
+                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[3],
+                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[4],
+                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[5]);
+            if(strcmp(szMac, "000000000000") != 0)
+            {
+                break;
+            }
+        }
+
+        ifaddrsVar=ifaddrsVar->ifa_next;
+    }
+    close(sockfd);
+    return szMac;
+}
+
+std::string base::getHostName()
+{
+    char hostname[1024] = {0};
+    gethostname(hostname, sizeof(hostname));
+    return hostname;
+}
+
+int base::makeAddr(const AddrInfo & addrInfo, sockaddr_storage & storage)
+{
+    if(addrInfo.sa_family()  == AF_INET)
+    {
+        sockaddr_in & addr = *(sockaddr_in *)&storage;
+        addr.sin_family = addrInfo.sa_family();
+        addr.sin_port = htons(addrInfo.port());
+        addr.sin_addr.s_addr = inet_addr(addrInfo.ip().c_str());
+        return sizeof(sockaddr_in);
+    }
+    else if(addrInfo.sa_family() == AF_INET6)
+    {
+        sockaddr_in6 & addr6 = *(sockaddr_in6 *)&storage;
+        addr6.sin6_family = addrInfo.sa_family();
+        addr6.sin6_port = htons(addrInfo.port());
+        inet_pton(AF_INET6, addrInfo.ip().c_str(), (void *)&(addr6.sin6_addr));
+        return sizeof(sockaddr_in6);
     }
 
     return 0;
 }
 
-void base::getLocalAddr(int sockfd, std::string & ip, uint16_t & port)
+AddrInfo base::getAddr(struct sockaddr * sockAddr, int sockLen)
 {
-    base::SockAddr localAddr;
-    memset(&localAddr, 0, sizeof(localAddr));
-    socklen_t addrLen = sizeof(localAddr);
-    if(::getpeername(sockfd, (struct sockaddr*)&localAddr, &addrLen) < 0)
+    if(sockLen == sizeof(sockaddr_in))
     {
-        //LOG
+        sockaddr_in & addr = *(sockaddr_in *)sockAddr;
+        return AddrInfo(AF_INET, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
     }
-
-    if(addrLen == sizeof(localAddr.addr))
+    else if(sockLen == sizeof(sockaddr_in6))
     {
-        ip = inet_ntoa(localAddr.addr.sin_addr);
-        port = ntohs(localAddr.addr.sin_port);
-    }
-    else if(addrLen == sizeof(localAddr.addr6))
-    {
+        sockaddr_in6 & addr6 = *(sockaddr_in6 *)sockAddr;
         char szIp[INET6_ADDRSTRLEN] = {0};
-        inet_ntop(AF_INET6, &(localAddr.addr6.sin6_addr), szIp, sizeof(szIp));
-
-        ip = szIp;
-        port = ntohs(localAddr.addr6.sin6_port);
+        inet_ntop(AF_INET6, &(addr6.sin6_addr), szIp, sizeof(szIp));
+        return AddrInfo(AF_INET6, szIp, ntohs(addr6.sin6_port));
     }
+
+    return AddrInfo();
 }
 
-void base::getPeerAddr(int sockfd, std::string & ip, uint16_t & port)
+AddrInfo base::getLocalAddr(int sockfd)
 {
-    base::SockAddr peerAddr;
-    memset(&peerAddr, 0, sizeof(peerAddr));
-    socklen_t addrLen = sizeof(peerAddr);
-    if(::getpeername(sockfd, (struct sockaddr*)&peerAddr, &addrLen) < 0)
+    sockaddr_storage storage;
+    socklen_t sockLen = sizeof(storage);
+    if(::getpeername(sockfd, (struct sockaddr*)&storage, &sockLen) < 0)
     {
         //LOG
     }
 
-    if(addrLen == sizeof(peerAddr.addr))
+    if(sockLen == sizeof(sockaddr_in))
     {
-        ip = inet_ntoa(peerAddr.addr.sin_addr);
-        port = ntohs(peerAddr.addr.sin_port);
+        sockaddr_in & addr = *(sockaddr_in *)&storage;
+        return AddrInfo(AF_INET, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
     }
-    else if(addrLen == sizeof(peerAddr.addr6))
+    else if(sockLen == sizeof(sockaddr_in6))
     {
+        sockaddr_in6 & addr6 = *(sockaddr_in6 *)&storage;
         char szIp[INET6_ADDRSTRLEN] = {0};
-        inet_ntop(AF_INET6, &(peerAddr.addr6.sin6_addr), szIp, sizeof(szIp));
-
-        ip = szIp;
-        port = ntohs(peerAddr.addr6.sin6_port);
+        inet_ntop(AF_INET6, &(addr6.sin6_addr), szIp, sizeof(szIp));
+        return AddrInfo(AF_INET6, szIp, ntohs(addr6.sin6_port));
     }
+
+    return AddrInfo();
+}
+
+AddrInfo base::getPeerAddr(int sockfd)
+{
+    sockaddr_storage storage;
+    socklen_t sockLen = sizeof(storage);
+    if(::getpeername(sockfd, (struct sockaddr*)&storage, &sockLen) < 0)
+    {
+        //LOG
+    }
+
+    if(sockLen == sizeof(sockaddr_in))
+    {
+         sockaddr_in & addr = *(sockaddr_in *)&storage;
+         return AddrInfo(AF_INET, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+    }
+    else if(sockLen == sizeof(sockaddr_in6))
+    {
+        sockaddr_in6 & addr6 = *(sockaddr_in6 *)&storage;
+        char szIp[INET6_ADDRSTRLEN] = {0};
+        inet_ntop(AF_INET6, &(addr6.sin6_addr), szIp, sizeof(szIp));
+        return AddrInfo(AF_INET6, szIp, ntohs(addr6.sin6_port));
+    }
+
+    return AddrInfo();
 }
 
 void base::setReuseAddr(int sockfd, bool on)
@@ -134,57 +203,6 @@ bool base::isZeroAddr(int sa_family, std::string & ip)
     }
 
     return false;
-}
-
-std::string base::getHostMac()
-{
-    struct ifaddrs * ifaddrsVar = nullptr;
-    getifaddrs(&ifaddrsVar);
-    if(ifaddrsVar == nullptr)
-    {
-        return "";
-    }
-
-    int sockfd;
-    if((sockfd=socket(AF_INET,SOCK_STREAM,0)) < 0)
-    {
-        return "";
-    }
-
-    char szMac[16] = {0};
-
-    while(ifaddrsVar!=NULL)
-    {
-        memset(szMac, 0, sizeof(szMac));
-        struct ifreq ifreqVar;
-        strncpy(ifreqVar.ifr_name, ifaddrsVar->ifa_name, sizeof(ifreqVar.ifr_name));
-
-        if(ioctl(sockfd, SIOCGIFHWADDR, &ifreqVar) == 0)
-        {
-            snprintf(szMac, sizeof(szMac), "%02x%02x%02x%02x%02x%02x",
-                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[0],
-                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[1],
-                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[2],
-                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[3],
-                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[4],
-                        (unsigned char)ifreqVar.ifr_hwaddr.sa_data[5]);
-            if(strcmp(szMac, "000000000000") != 0)
-            {
-                break;
-            }
-        }
-
-        ifaddrsVar=ifaddrsVar->ifa_next;
-    }
-    close(sockfd);
-    return szMac;
-}
-
-std::string base::getHostName()
-{
-    char hostname[1024] = {0};
-    gethostname(hostname, sizeof(hostname));
-    return hostname;
 }
 
 void base::getAddrInfo(std::vector<AddrInfo> & addrInfos, uint32_t port, bool bIpv6)

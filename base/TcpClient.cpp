@@ -17,12 +17,12 @@ TcpClient::~TcpClient()
 
 }
 
-void TcpClient::delClient(const ConnInfo & ci)
+void TcpClient::delClient(ConnInfo & ci)
 {
     _loop->runInLoop(std::bind(&TcpClient::delClientInLoop, this, ci));
 }
 
-BaseConnPtr TcpClient::getConn(const ConnInfo & ci)
+BaseConnPtr TcpClient::getConn(ConnInfo & ci)
 {
     return _connMap.getConn(ci);
 }
@@ -32,7 +32,7 @@ BaseConnPtr TcpClient::getNextConn(int type)
     return _connList[type].getNextConn();
 }
 
-void TcpClient::delClientInLoop(const ConnInfo & ci)
+void TcpClient::delClientInLoop(ConnInfo & ci)
 {
      BaseConnPtr pConn = _connMap.getConn(ci);
      if(pConn)
@@ -57,11 +57,10 @@ void TcpClient::onConnect(const BaseConnPtr & pConn)
         }
         else
         {
-            base::setReuseAddr(pConn->getSockfd(), true);
-            base::setReusePort(pConn->getSockfd(), true);
-            base::setTcpNoDely(pConn->getSockfd(), true);
-            base::setKeepAlive(pConn->getSockfd(), true);
-
+            base::setReuseAddr(ci.fd(), true);
+            base::setReusePort(ci.fd(), true);
+            base::setTcpNoDely(ci.fd(), true);
+            base::setKeepAlive(ci.fd(), true);
             _connMap.setConn(ci, pConn);
         }
     }
@@ -92,6 +91,8 @@ void TcpClient::onRetry(const BaseConnPtr & pConn)
     if(!pConn->shutdownd() && _connMap.hasConn(pConn->getConnInfo()))
     {
         _connMap.setConn(pConn->getConnInfo(), nullptr);
-        pConn->doConnect(this, pConn->getConnInfo());
+        pConn->setConnectCallback(std::bind(&TcpClient::onConnect, this, pConn));
+        pConn->setCloseCallback(std::bind(&TcpClient::onClose, this, pConn));
+        pConn->doConnect(pConn->getConnInfo());
     }
 }

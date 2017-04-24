@@ -34,49 +34,46 @@ public:
     void close();
     void shutdown();
 
-    void doAccept(TcpServer * pServer, evutil_socket_t sockfd);
-    void doConnect(TcpClient * pClient, const ConnInfo & ci);
+    void doAccept(const ConnInfo & ci);
+    void doConnect(const ConnInfo & ci);
 
     inline EventLoop * getLoop() const { return _loop; }
     inline bool connected() const { return _bConnected; }
     inline bool closed() const { return _bClosed; }
     inline bool shutdownd() const { return _bShutdownd; }
-    inline int getSockfd() const { return _sockfd; }
     inline const ConnInfo & getConnInfo() const { return _connInfo; }
 
+    void setConnectCallback(const ConnCallback & cb) { _connect_cb = cb; }
+    void setCloseCallback(const ConnCallback & cb) { _close_cb = cb; }
+    void setMessageCallback(const ConnCallback & cb) { _message_cb = cb; }
 protected:
-    virtual void onRead() {};
-    virtual void onWrite() {};
-    virtual void onEvent(short what);
-
     virtual void onConnect() {}
     virtual void onClose() {}
-    virtual void sendInLoop(const std::shared_ptr<void> &) {}
+    virtual void onRead() {};
+    virtual void onWrite(const std::shared_ptr<void> &) {}
 
-    void connectInLoop();
-    void closeInLoop();
 private:
     void BuildAccept();
     void BuildConnect();
 
-    static void read_cb(struct bufferevent * bev, void * ctx);
-    static void write_cb(struct bufferevent * bev, void * ctx);
-    static void event_cb(struct bufferevent * bev, short what, void * ctx);
+    void connectInLoop();
+    void closeInLoop();
+    void onEvent(short what);
 
-    void setConnectCallback(const ConnCallback & cb) { _connect_cb = cb; }
-    void setCloseCallback(const ConnCallback & cb) { _close_cb = cb; }
+    static void read_cb(struct bufferevent * bev, void * ctx);
+    static void event_cb(struct bufferevent * bev, short what, void * ctx);
 private:
     EventLoop * _loop; // the event loop
     bool _bConnected; // the connect flag
     bool _bClosed; // the close flag
     bool _bShutdownd; // the shutdown flag
-    evutil_socket_t _sockfd; // the socket fd
     ConnInfo _connInfo; // the connection infomation
 
     struct bufferevent * _bufev; // the libevent buffer event
 
     ConnCallback _connect_cb; // register the connet callback
     ConnCallback _close_cb; // register the close callback
+    ConnCallback _message_cb;
 
     //tie 'this', so can't free object manual
     std::shared_ptr<void> _tie;

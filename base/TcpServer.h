@@ -28,7 +28,7 @@ public:
     ~TcpServer();
 
     template<typename T>
-    void addServer(const ConnInfo & ci)
+    void addServer(ConnInfo & ci)
     {
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -37,20 +37,18 @@ public:
         _loop->runInLoop(std::bind(&TcpServer::addServerInLoop<T>, this, ci));
     }
 
-    void delServer(const ConnInfo & ci);
+    void delServer(ConnInfo & ci);
 
     void getConnInfo(std::vector<ConnInfo> & connList);
 private:
     template<typename T>
-    void addServerInLoop(const ConnInfo & ci)
+    void addServerInLoop(ConnInfo & ci)
     {
         struct evconnlistener * listener = _listeners[ci];
         if(!listener)
         {
-            AddrInfo addrInfo = ci.getCurrAddrInfo();
-
-            base::SockAddr sockAddr;
-            int sockLen = base::setAddr(addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), &sockAddr);
+            sockaddr_storage sockAddr;
+            int sockLen = base::makeAddr(ci.getCurrAddrInfo(), sockAddr);
 
             _listeners[ci] = evconnlistener_new_bind(_loop->get_event(), onAccept<T>, this,
                             LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
@@ -58,30 +56,35 @@ private:
         }
     }
 
-    void delServerInLoop(const ConnInfo & ci);
+    void delServerInLoop(ConnInfo & ci);
 
     template<typename T>
-    void onAccept(evutil_socket_t sockfd)
+    void onAccept(ConnInfo & ci)
     {
-        //base::setReusePort(sockfd, true);
-        base::setTcpNoDely(sockfd, true);
-        base::setKeepAlive(sockfd, true);
+        base::setTcpNoDely(ci.fd(), true);
+        base::setKeepAlive(ci.fd(), true);
+
         BaseConnPtr  pConn(new T);
-        pConn->doAccept(this, sockfd);
+        pConn->setConnectCallback(std::bind(&TcpServer::onConnect, this, pConn));
+        pConn->setCloseCallback(std::bind(&TcpServer::onClose, this, pConn));
+        pConn->doAccept(ci);
     }
 
     template<typename T>
     static void onAccept(struct evconnlistener *,
                         evutil_socket_t sockfd,
-                        struct sockaddr *,
-                        int,
+                        struct sockaddr * sockAddr,
+                        int sockLen,
                         void * arg)
     {
-        static_cast<TcpServer *>(arg)->onAccept<T>(sockfd);
+        ConnInfo ci(sockfd);
+        ci.addAddrInfo(base::getAddr(sockAddr, sockLen));
+        static_cast<TcpServer *>(arg)->onAccept<T>(ci);
     }
 
     void onConnect(const BaseConnPtr & pConn);
     void onClose(const BaseConnPtr & pConn);
+    void onMessage(const BaseConnPtr & pConn);
 private:
     EventLoop *             _loop;
     struct evconnlistener * _listener;
@@ -90,8 +93,6 @@ private:
     std::set<ConnInfo>      _connList;
 
     ListenMap_t              _listeners;
-
-    friend BaseConn;
 };
 
 #endif

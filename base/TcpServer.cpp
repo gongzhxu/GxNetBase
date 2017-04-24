@@ -15,7 +15,7 @@ TcpServer::~TcpServer()
 {
 }
 
-void TcpServer::delServer(const ConnInfo & ci)
+void TcpServer::delServer(ConnInfo & ci)
 {
     {
         std::unique_lock<std::mutex> lock(_mutex);
@@ -24,7 +24,7 @@ void TcpServer::delServer(const ConnInfo & ci)
     _loop->runInLoop(std::bind(&TcpServer::delServerInLoop, this, ci));
 }
 
-void TcpServer::delServerInLoop(const ConnInfo & ci)
+void TcpServer::delServerInLoop(ConnInfo & ci)
 {
     auto it = _listeners.find(ci);
     if(it != _listeners.end() && it->second)
@@ -58,4 +58,7 @@ void TcpServer::onClose(const BaseConnPtr &)
     //LOG_TRACE("TcpServer::onClose:%p", pConn.get());
 }
 
+void TcpServer::onMessage(const BaseConnPtr &)
+{
 
+}
