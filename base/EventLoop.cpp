@@ -98,7 +98,7 @@ TimerId EventLoop::runAfter(const struct timeval & tv, const Functor && cb)
 
 TimerId  EventLoop::runEvery(const struct timeval & tv, const Functor && cb)
 {
-    return TimerObj::createTimer(this, tv, std::move(cb), TIMER_PERSIST);;
+    return TimerObj::createTimer(this, tv, std::move(cb), TIMER_PERSIST);
 }
 
 void EventLoop::cancel(TimerId timer)
@@ -129,6 +129,20 @@ void EventLoop::doPendingFunctors()
     }
 }
 
+void EventLoop::addTimer(TimerId timerId, std::unique_ptr<TimerObj> & timerObj)
+{
+    _timerMap.insert(std::make_pair(timerId, std::move(timerObj)));
+}
+
+void EventLoop::delTimer(TimerId timerId)
+{
+    auto it = _timerMap.find(timerId);
+    if(it != _timerMap.end())
+    {
+        _timerMap.erase(it);
+    }
+}
+
 void EventLoop::wakeup()
 {
     uint64_t one = 1;
@@ -137,27 +151,6 @@ void EventLoop::wakeup()
     {
         LOG_FATAL("wakeup error:%d, %s", n, strerror(errno));
     }
-}
-
-void EventLoop::addTimer(TimerId timerId, TimerObj * timerObj)
-{
-    _timerMap[timerId] = timerObj;
-}
-
-void EventLoop::delTimer(TimerId timerId)
-{
-    _timerMap.erase(timerId);
-}
-
-TimerObj * EventLoop::getTimer(TimerId timerId)
-{
-    auto it = _timerMap.find(timerId);
-    if(it != _timerMap.end())
-    {
-        return it->second;
-    }
-
-    return nullptr;
 }
 
 void EventLoop::handleWakeup()

@@ -18,26 +18,27 @@ class TimerObj
 {
 private:
     typedef std::function<void()> Functor;
-
-    TimerObj(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type);
-    ~TimerObj();
+    TimerObj(EventLoop * loop, TimerId timerId, const struct timeval & tv, const Functor && cb, int type);
 public:
+    ~TimerObj();
+
+private:
     static TimerId createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type);
     static void deleteTimer(EventLoop * loop, TimerId timer);
-private:
-    void startTimer();
-    void onTimer();
 
-    static void stopTimer(EventLoop * loop, TimerId TimerId);
+    void onTimer();
+    static void startTimer(EventLoop * loop, TimerId timerId, const struct timeval & tv, const Functor & cb, int type);
+    static void stopTimer(EventLoop * loop, TimerId timerId);
     static void handleTimer(int fd, short which, void *arg);
 
-public:
+private:
     EventLoop *     _loop;
     struct event *  _timer;
     struct timeval   _tv;
     Functor          _cb;
     TimerId          _timerId;
     int              _type;
+    friend           EventLoop;
 };
 
 #endif

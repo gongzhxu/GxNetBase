@@ -5,40 +5,15 @@
 #include "BaseUtil.h"
 #include "EventLoop.h"
 
-static std::atomic<TimerId> g_timerId(0);
-
-TimerObj::TimerObj(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type):
+TimerObj::TimerObj(EventLoop * loop, TimerId timerId, const struct timeval & tv, const Functor && cb, int type):
     _loop(loop),
     _timer(nullptr),
     _tv(tv),
     _cb(std::move(cb)),
-    _timerId(++g_timerId),
+    _timerId(timerId),
     _type(type)
 {
-
-}
-
-TimerObj::~TimerObj()
-{
     _loop->assertInLoopThread();
-    _loop->delTimer(_timerId);
-    evtimer_del(_timer);
-}
-
-TimerId TimerObj::createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type)
-{
-    TimerObj * pTimer = new TimerObj(loop, tv, std::move(cb), type);
-    loop->runInLoop(std::bind(&TimerObj::startTimer, pTimer));
-    return pTimer->_timerId;
-}
-
-void TimerObj::deleteTimer(EventLoop * loop, TimerId TimerId)
-{
-    loop->runInLoop(std::bind(&TimerObj::stopTimer, loop, TimerId));
-}
-
-void TimerObj::startTimer()
-{
     if(_type == TIMER_ONCE)
     {
         _timer = evtimer_new(_loop->get_event(), handleTimer, this);
@@ -48,10 +23,38 @@ void TimerObj::startTimer()
         _timer = event_new(_loop->get_event(), -1, EV_PERSIST, handleTimer, this);
     }
     ASSERT_ABORT(_timer);
+    evtimer_add(_timer, &_tv);
+}
 
-    _loop->addTimer(_timerId, this);
-    int ret = evtimer_add(_timer, &_tv);
-    ASSERT_ABORT(ret == 0);
+TimerObj::~TimerObj()
+{
+    _loop->assertInLoopThread();
+    evtimer_del(_timer);
+    event_free(_timer);
+}
+
+TimerId TimerObj::createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type)
+{
+    static std::atomic<TimerId> g_timerId(0);
+    TimerId timerId = ++g_timerId;
+    loop->runInLoop(std::bind(&TimerObj::startTimer, loop, timerId, tv, cb, type));
+    return timerId;
+}
+
+void TimerObj::deleteTimer(EventLoop * loop, TimerId timerId)
+{
+    loop->runInLoop(std::bind(&TimerObj::stopTimer, loop, timerId));
+}
+
+void TimerObj::startTimer(EventLoop * loop, TimerId timerId, const struct timeval & tv, const Functor & cb, int type)
+{
+    std::unique_ptr<TimerObj> timerObj(new TimerObj(loop, timerId, tv, std::move(cb), type));
+    loop->addTimer(timerId, timerObj);
+}
+
+void TimerObj::stopTimer(EventLoop * loop, TimerId TimerId)
+{
+    loop->delTimer(TimerId);
 }
 
 void TimerObj::onTimer()
@@ -60,15 +63,6 @@ void TimerObj::onTimer()
     if(_type == TIMER_ONCE)
     {
         stopTimer(_loop, _timerId);
-    }
-}
-
-void TimerObj::stopTimer(EventLoop * loop, TimerId TimerId)
-{
-    TimerObj * timerObj = loop->getTimer(TimerId);
-    if(timerObj)
-    {
-        delete timerObj;
     }
 }
 

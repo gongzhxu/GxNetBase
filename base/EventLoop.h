@@ -16,7 +16,7 @@ class EventLoop
 public:
     typedef std::function<void()> Functor;
     typedef std::vector<Functor> FunctorList;
-    typedef std::map<TimerId, TimerObj *> TimerMap;
+    typedef std::map<TimerId, std::unique_ptr<TimerObj> > TimerMap;
 
     EventLoop(int loopId = 0);
     ~EventLoop();
@@ -50,12 +50,11 @@ public:
 private:
     void doPendingFunctors();
 
+    void addTimer(TimerId timerId, std::unique_ptr<TimerObj> & timerObj);
+    void delTimer(TimerId timerId);
+
     void wakeup();
     void handleWakeup();
-
-    void addTimer(TimerId timerId, TimerObj * timerObj);
-    void delTimer(TimerId timerId);
-    TimerObj * getTimer(TimerId timerId);
 
     static void handleWakeup(int fd, short which, void *arg);
 private:
