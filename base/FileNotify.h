@@ -21,19 +21,19 @@ public:
     typedef std::function<void(const FileInfo)> Functor;
 
     FileInfo():
-        _wd(0)
+        wd_(0)
     {}
 
     FileInfo(int wd, const char * name, const Functor && cb):
-        _wd(wd), _name(name), _cb(std::move(cb))
+        wd_(wd), name_(name), cb_(std::move(cb))
     {}
 
-    int wd() { return _wd; }
-    std::string & name() { return _name; }
+    int wd() { return wd_; }
+    std::string & name() { return name_; }
 public:
-    int _wd;
-    std::string _name;
-    Functor _cb;
+    int wd_;
+    std::string name_;
+    Functor cb_;
 };
 
 }

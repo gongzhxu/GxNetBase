@@ -58,8 +58,8 @@ private:
     redisReply * _vcommand(const char * format, ...);
 
 private:
-    std::string           _addrs;
-    redisClusterContext * _pContext;
+    std::string           addrs_;
+    redisClusterContext *  context_;
 };
 
 #endif //_REDIS_PROXY_CONN_H_

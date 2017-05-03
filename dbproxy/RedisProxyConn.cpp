@@ -5,8 +5,8 @@
 #define REDIS_CONNECT_TIMEOUT 200000
 
 RedisProxyConn::RedisProxyConn(const char * addrs):
-    _addrs(addrs),
-    _pContext(nullptr)
+    addrs_(addrs),
+    context_(nullptr)
 {
     init();
 }
@@ -18,16 +18,16 @@ RedisProxyConn::~RedisProxyConn()
 
 bool RedisProxyConn::init()
 {
-    if(_pContext != nullptr)
+    if(context_ != nullptr)
     {
         return true;
     }
 
     struct timeval timeout = {0, REDIS_CONNECT_TIMEOUT};
-	_pContext = redisClusterConnectWithTimeout(_addrs.c_str(), timeout, HIRCLUSTER_FLAG_NULL);
-    if(!_pContext || _pContext->err)
+	context_ = redisClusterConnectWithTimeout(addrs_.c_str(), timeout, HIRCLUSTER_FLAG_NULL);
+    if(!context_ || context_->err)
     {
-		if(_pContext)
+		if(context_)
 		{
 			release();
 		}
@@ -45,14 +45,14 @@ bool RedisProxyConn::init()
 
 void RedisProxyConn::release()
 {
-    if(_pContext)
+    if(context_)
     {
-        if(_pContext->err)
+        if(context_->err)
         {
-            LOG_DEBUG("redisCommand failed:%s", _pContext->errstr);
+            LOG_DEBUG("redisCommand failed:%s", context_->errstr);
         }
-        redisClusterFree(_pContext);
-        _pContext = nullptr;
+        redisClusterFree(context_);
+        context_ = nullptr;
     }
 }
 
@@ -72,7 +72,7 @@ bool RedisProxyConn::command(const char * format, ...)
     LOG_DEBUG("strCmd:%s", strCmd.c_str());
 
     bool bValue = false;
-	redisReply * reply = (redisReply *)redisClusterCommand(_pContext, strCmd.c_str());
+	redisReply * reply = (redisReply *)redisClusterCommand(context_, strCmd.c_str());
 	if(!reply)
     {
         release();
@@ -105,7 +105,7 @@ bool RedisProxyConn::vcommand(const char * format, ...)
     va_list arglist;
     va_start(arglist, format);
     bool bValue = false;
-	redisReply * reply = (redisReply *)redisClustervCommand(_pContext, format, arglist);
+	redisReply * reply = (redisReply *)redisClustervCommand(context_, format, arglist);
 	if(!reply)
     {
         release();
@@ -139,7 +139,7 @@ redisReply * RedisProxyConn::_vcommand(const char * format, ...)
 
     va_list arglist;
     va_start(arglist, format);
-	redisReply * reply = (redisReply *)redisClustervCommand(_pContext, format, arglist);
+	redisReply * reply = (redisReply *)redisClustervCommand(context_, format, arglist);
     va_end(arglist);
 
 	return reply;
@@ -152,7 +152,7 @@ bool RedisProxyConn::exists(const char * key)
         return false;
     }
 
-    redisReply * reply = (redisReply*) redisClusterCommand(_pContext, "EXISTS %s", key);
+    redisReply * reply = (redisReply*) redisClusterCommand(context_, "EXISTS %s", key);
     if(!reply)
     {
         release();
@@ -198,7 +198,7 @@ bool RedisProxyConn::mget(const KeyList & keys, ValueMap & retValue)
         strCmd += " " + *it;
     }
 
-    redisReply * reply = (redisReply*) redisClusterCommand(_pContext, strCmd.c_str());
+    redisReply * reply = (redisReply*) redisClusterCommand(context_, strCmd.c_str());
     if(!reply)
     {
         release();
@@ -256,7 +256,7 @@ bool RedisProxyConn::hdel(const char * key, const ItemList & items)
         argv[index++] = items[i].c_str();
     }
 
-	redisReply* reply = (redisReply *)redisClusterCommandArgv(_pContext, argc, argv, NULL);
+	redisReply* reply = (redisReply *)redisClusterCommandArgv(context_, argc, argv, NULL);
 	if (!reply)
     {
 		delete []argv;
@@ -295,7 +295,7 @@ bool RedisProxyConn::hmset(const char * key, const ItemList & items, const char 
         argv[index++] = value;
     }
 
-	redisReply* reply = (redisReply *)redisClusterCommandArgv(_pContext, argc, argv, NULL);
+	redisReply* reply = (redisReply *)redisClusterCommandArgv(context_, argc, argv, NULL);
 	if (!reply)
     {
 		delete []argv;
@@ -334,7 +334,7 @@ bool RedisProxyConn::hmset(const char * key, const ValueMap & valueMap)
         argv[index++] = it->second.c_str();
     }
 
-	redisReply* reply = (redisReply *)redisClusterCommandArgv(_pContext, argc, argv, NULL);
+	redisReply* reply = (redisReply *)redisClusterCommandArgv(context_, argc, argv, NULL);
 	if (!reply)
     {
 		delete []argv;
@@ -387,7 +387,7 @@ bool RedisProxyConn::hmget(const char * key, const ItemList & items, ValueMap & 
     }
 
     LOG_DEBUG("szCmd:%s", strCmd.c_str());
-    redisReply * reply = (redisReply*) redisClusterCommand(_pContext, strCmd.c_str());
+    redisReply * reply = (redisReply*) redisClusterCommand(context_, strCmd.c_str());
     if(!reply)
     {
         release();

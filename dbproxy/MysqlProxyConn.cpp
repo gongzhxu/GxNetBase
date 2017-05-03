@@ -7,9 +7,9 @@
 #define	DBRESULT_UNEXCEPTION	-1
 
 MysqlProxyConn::MysqlProxyConn(const MysqlConnInfo & info):
-    _info(info),
-    _bConnect(false),
-    _num(0)
+    info_(info),
+    bConnect_(false),
+    num_(0)
 {
     init();
 }
@@ -21,44 +21,44 @@ MysqlProxyConn::~MysqlProxyConn()
 
 bool MysqlProxyConn::init()
 {
-    if(!mysql_init(&_mysql))
+    if(!mysql_init(&mysql_))
     {
-        LOG_INFO("init mysql error:%d,%s", mysql_errno(&_mysql), mysql_error(&_mysql));
+        LOG_INFO("init mysql error:%d,%s", mysql_errno(&mysql_), mysql_error(&mysql_));
         return false;
     }
 
     unsigned int nTimeout = 60;
-	mysql_options(&_mysql,MYSQL_OPT_CONNECT_TIMEOUT, &nTimeout);
-	mysql_options(&_mysql,MYSQL_OPT_READ_TIMEOUT, &nTimeout);
-	mysql_options(&_mysql,MYSQL_OPT_WRITE_TIMEOUT, &nTimeout);
+	mysql_options(&mysql_,MYSQL_OPT_CONNECT_TIMEOUT, &nTimeout);
+	mysql_options(&mysql_,MYSQL_OPT_READ_TIMEOUT, &nTimeout);
+	mysql_options(&mysql_,MYSQL_OPT_WRITE_TIMEOUT, &nTimeout);
 	my_bool bReconnect = 1;
-	mysql_options(&_mysql,MYSQL_OPT_RECONNECT, &bReconnect);
+	mysql_options(&mysql_,MYSQL_OPT_RECONNECT, &bReconnect);
 
-    if(!mysql_real_connect(&_mysql, _info.host.c_str(), _info.user.c_str(), _info.passwd.c_str(), _info.database.c_str(), _info.port, nullptr, 0))
+    if(!mysql_real_connect(&mysql_, info_.host.c_str(), info_.user.c_str(), info_.passwd.c_str(), info_.database.c_str(), info_.port, nullptr, 0))
     {
-        LOG_INFO("connect mysql=%s error:%d,%s", _info.host.c_str(), mysql_errno(&_mysql), mysql_error(&_mysql));
-        mysql_close(&_mysql);
+        LOG_INFO("connect mysql=%s error:%d,%s", info_.host.c_str(), mysql_errno(&mysql_), mysql_error(&mysql_));
+        mysql_close(&mysql_);
         return false;
     }
 
-    if(mysql_set_character_set(&_mysql, "utf8") != 0)
+    if(mysql_set_character_set(&mysql_, "utf8") != 0)
     {
-        LOG_INFO("connect mysql=%s error:%d,%s", _info.host.c_str(), mysql_errno(&_mysql), mysql_error(&_mysql));
-        mysql_close(&_mysql);
+        LOG_INFO("connect mysql=%s error:%d,%s", info_.host.c_str(), mysql_errno(&mysql_), mysql_error(&mysql_));
+        mysql_close(&mysql_);
         return false;
     }
 
-	_bConnect = true;
+	bConnect_ = true;
 	LOG_INFO("connect mysql successed!!!");
 	return true;
 }
 
 void MysqlProxyConn::release()
 {
-    if(_bConnect)
+    if(bConnect_)
     {
-        mysql_close(&_mysql);
-        _bConnect = false;
+        mysql_close(&mysql_);
+        bConnect_ = false;
     }
 }
 
@@ -66,7 +66,7 @@ std::string MysqlProxyConn::escape(const std::string & from)
 {
     std::string to;
     to.resize(from.size()*2+2);
-    long len= mysql_real_escape_string(&_mysql, const_cast<char *>(to.c_str()), from.c_str(), from.size());
+    long len= mysql_real_escape_string(&mysql_, const_cast<char *>(to.c_str()), from.c_str(), from.size());
 
     return len >= 0? to.substr(0, len): "";
 }
@@ -81,7 +81,7 @@ bool MysqlProxyConn::escape(const std::string & from, std::string & to)
     else
     {
         to.resize(from.size()*2+2);
-        long len= mysql_real_escape_string(&_mysql, const_cast<char *>(to.c_str()), from.c_str(), from.size());
+        long len= mysql_real_escape_string(&mysql_, const_cast<char *>(to.c_str()), from.c_str(), from.size());
         if(len >= 0)
         {
             to.resize(len);
@@ -100,11 +100,11 @@ bool MysqlProxyConn::command(const char * szCmd, int nLength)
 {
     LOG_DEBUG("mysql cmd:%s, %d", szCmd, nLength);
 
-    int nRet = mysql_real_query(&_mysql, szCmd, nLength);
+    int nRet = mysql_real_query(&mysql_, szCmd, nLength);
 	if(nRet != DBRESULT_SUCCESS)
     {
-        unsigned int nErr = mysql_errno(&_mysql);
-        LOG_WARN("mysql query error:%d, %d, %s", nRet, nErr, mysql_error(&_mysql));
+        unsigned int nErr = mysql_errno(&mysql_);
+        LOG_WARN("mysql query error:%d, %d, %s", nRet, nErr, mysql_error(&mysql_));
         if(nErr == CR_SERVER_GONE_ERROR ||
 			nErr == CR_SERVER_LOST ||
 			nErr == CR_CONN_HOST_ERROR)
@@ -113,14 +113,14 @@ bool MysqlProxyConn::command(const char * szCmd, int nLength)
 			release();
 			if(init())
             {
-                nRet = mysql_real_query(&_mysql, szCmd, nLength);
+                nRet = mysql_real_query(&mysql_, szCmd, nLength);
             }
 		}
     }
 
     if(nRet != DBRESULT_SUCCESS)
     {
-        LOG_WARN("mysql query error:%d, %d, %s", nRet, mysql_errno(&_mysql), mysql_error(&_mysql));
+        LOG_WARN("mysql query error:%d, %d, %s", nRet, mysql_errno(&mysql_), mysql_error(&mysql_));
         return false;
     }
 
@@ -129,7 +129,7 @@ bool MysqlProxyConn::command(const char * szCmd, int nLength)
 
 bool MysqlProxyConn::query(const char * szCmd)
 {
-    int nRet = mysql_query(&_mysql, szCmd);
+    int nRet = mysql_query(&mysql_, szCmd);
 
     return nRet == DBRESULT_SUCCESS? true: false;
 }
@@ -138,7 +138,7 @@ bool MysqlProxyConn::autocommit(bool on)
 {
     if(on)
     {
-        if(mysql_autocommit(&_mysql, 1) != 0)
+        if(mysql_autocommit(&mysql_, 1) != 0)
         {
             release();
             return false;
@@ -146,7 +146,7 @@ bool MysqlProxyConn::autocommit(bool on)
     }
     else
     {
-        if(mysql_autocommit(&_mysql, 0) != 0)
+        if(mysql_autocommit(&mysql_, 0) != 0)
         {
             release();
             return false;
@@ -158,7 +158,7 @@ bool MysqlProxyConn::autocommit(bool on)
 
 bool MysqlProxyConn::commit()
 {
-    _num = 0;
-    return mysql_commit(&_mysql);
+    num_ = 0;
+    return mysql_commit(&mysql_);
 }
 

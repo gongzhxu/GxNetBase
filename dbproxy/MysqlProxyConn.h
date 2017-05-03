@@ -20,48 +20,48 @@ class AutoMysqlRes
 {
 public:
     AutoMysqlRes(MYSQL * mysql):
-        _mysql(mysql)
+        mysql_(mysql),
+        res_(mysql_store_result(mysql))
     {
-        _res = mysql_store_result(mysql);
     }
 
     MYSQL_RES * next()
     {
-        if(_res)
+        if(res_)
         {
-            mysql_free_result(_res);
-            _res = nullptr;
+            mysql_free_result(res_);
+            res_ = nullptr;
         }
 
-        if(!mysql_next_result(_mysql))
+        if(!mysql_next_result(mysql_))
         {
-            _res = mysql_store_result(_mysql);
+            res_ = mysql_store_result(mysql_);
         }
 
-        return _res;
+        return res_;
     }
 
     ~AutoMysqlRes()
     {
-        if(_res)
+        if(res_)
         {
-            mysql_free_result(_res);
+            mysql_free_result(res_);
         }
 
-        while(!mysql_next_result(_mysql))
+        while(!mysql_next_result(mysql_))
         {
-            _res = mysql_store_result(_mysql);
-            if(_res)
+            res_ = mysql_store_result(mysql_);
+            if(res_)
             {
-                mysql_free_result(_res);
+                mysql_free_result(res_);
             }
         }
     }
 
-    MYSQL_RES * res() { return _res; }
+    MYSQL_RES * res() { return res_; }
 private:
-    MYSQL * _mysql;
-    MYSQL_RES * _res;
+    MYSQL * mysql_;
+    MYSQL_RES * res_;
 };
 
 class MysqlProxyConn
@@ -75,8 +75,8 @@ public:
     void release();
     bool autocommit(bool on);
 
-    MYSQL * mysql() { return &_mysql; }
-    int num() { return _num; }
+    MYSQL * mysql() { return &mysql_; }
+    int num() { return num_; }
 
     std::string escape(const std::string & from);
     bool escape(const std::string & from, std::string & to);
@@ -84,11 +84,11 @@ public:
     bool query(const char * szCmd);
     bool commit();
 private:
-    MysqlConnInfo _info;
+    MysqlConnInfo info_;
 
-    MYSQL       _mysql;
-    bool        _bConnect;
-    int          _num;
+    MYSQL       mysql_;
+    bool         bConnect_;
+    int           num_;
 };
 
 #endif //_MYSQL_PROXY_CONN_H_

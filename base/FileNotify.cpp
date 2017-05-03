@@ -67,14 +67,14 @@ void FileNotify::onRead()
         }
 
         const FileNotifyImpl::FileInfo & info = it->second;
-        if(info._cb)
+        if(info.cb_)
         {
-            info._cb(info);
+            info.cb_(info);
         }
 
         if(et.mask & IN_IGNORED)
         {
-            addWatch(info._name.c_str(), std::move(info._cb));
+            addWatch(info.name_.c_str(), std::move(info.cb_));
             notifyMap_.erase(et.wd);
         }
     }

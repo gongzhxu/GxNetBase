@@ -72,9 +72,9 @@ private:
     size_t sizePendingFunctors_;
 
     TimerMap    timerMap_;
-    friend TimerObj;
 
     std::vector<struct event *> signalEvents_;
+    friend TimerObj;
 };
 
 
