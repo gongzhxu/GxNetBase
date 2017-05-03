@@ -23,11 +23,11 @@ public:
     EventLoop * getNextLoop();
     EventLoop * getModLoop(int sessionId);
 private:
-    EventLoop * _baseLoop;
-    size_t _next;
+    EventLoop * baseLoop_;
+    size_t next_;
 
-    std::vector<EventLoop *> _loops;
-    std::vector<EventLoopThreadPtr> _threads;
+    std::vector<EventLoop *> loops_;
+    std::vector<EventLoopThreadPtr> threads_;
 
 };
 

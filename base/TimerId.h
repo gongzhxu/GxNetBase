@@ -32,12 +32,12 @@ private:
     static void handleTimer(int fd, short which, void *arg);
 
 private:
-    EventLoop *     _loop;
-    struct event *  _timer;
-    struct timeval   _tv;
-    Functor          _cb;
-    TimerId          _timerId;
-    int              _type;
+    EventLoop *     loop_;
+    struct event *  timer_;
+    struct timeval   tv_;
+    Functor          cb_;
+    TimerId          timerId_;
+    int              type_;
     friend           EventLoop;
 };
 

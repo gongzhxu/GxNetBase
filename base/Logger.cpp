@@ -8,7 +8,7 @@
 #include "AsyncLogging.h"
 #include "StringOps.h"
 
-static __thread char t_time[32];
+static __thread char ttime_[32];
 static __thread time_t t_lastSecond;
 
 const char * LogLevelName[Logger::NUM_LEVELS] =
@@ -22,28 +22,28 @@ const char * LogLevelName[Logger::NUM_LEVELS] =
 };
 
 Logger::Logger(const char * fmt, ...):
-    _file(""),
-    _raw(true)
+    file_(""),
+    raw_(true)
 {
     va_list arglist;
     va_start(arglist, fmt);
-    base::vsprintfex(_content, fmt, arglist);
+    base::vsprintfex(content_, fmt, arglist);
     va_end(arglist);
 }
 
 Logger::Logger(LogLevel level, const char * file, int line, const char * func, const char * fmt, ...):
-    _level(level),
-    _tid(CurrentThread::tid()),
-    _file(file),
-    _line(line),
-    _func(func),
-    _raw(false)
+    level_(level),
+    tid_(CurrentThread::tid()),
+    file_(file),
+    line_(line),
+    func_(func),
+    raw_(false)
 {
     formatTime();
 
     va_list arglist;
     va_start(arglist, fmt);
-    base::vsprintfex(_content, fmt, arglist);
+    base::vsprintfex(content_, fmt, arglist);
     va_end(arglist);
 }
 
@@ -60,32 +60,32 @@ void Logger::formatTime()
     if(seconds != t_lastSecond)
     {
         t_lastSecond = seconds;
-        struct tm tm_time;
-        gmtime_r(&seconds, &tm_time);
-        snprintf(t_time, sizeof(t_time), "%4d%02d%02d %02d:%02d:%02d",
-                tm_time.tm_year + 1900, tm_time.tm_mon + 1, tm_time.tm_mday,
-                tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec);
+        struct tm tmtime_;
+        gmtime_r(&seconds, &tmtime_);
+        snprintf(ttime_, sizeof(ttime_), "%4d%02d%02d %02d:%02d:%02d",
+                tmtime_.tm_year + 1900, tmtime_.tm_mon + 1, tmtime_.tm_mday,
+                tmtime_.tm_hour, tmtime_.tm_min, tmtime_.tm_sec);
     }
 
-    snprintf(_time, sizeof(_time), "%s.%06d", t_time, microseconds);
+    snprintf(time_, sizeof(time_), "%s.%06d", ttime_, microseconds);
 }
 
 size_t Logger::format(char * data, size_t len)
 {
-    if(_raw)
+    if(raw_)
     {
-        snprintf(data, len, "%s\n", _content.c_str());
+        snprintf(data, len, "%s\n", content_.c_str());
     }
     else
     {
         snprintf(data, len, "%s [%s][%d] - %s -- <%s,%d,%s>\n",
-                    _time,
-                    LogLevelName[_level],
-                    _tid,
-                    _content.c_str(),
-                    _file.data(),
-                    _line,
-                    _func);
+                    time_,
+                    LogLevelName[level_],
+                    tid_,
+                    content_.c_str(),
+                    file_.data(),
+                    line_,
+                    func_);
     }
 
     return strlen(data);
@@ -93,19 +93,19 @@ size_t Logger::format(char * data, size_t len)
 
 void Logger::format(std::string & data)
 {
-    if(_raw)
+    if(raw_)
     {
-        base::sprintfex(data, "%s\n", _content.c_str());
+        base::sprintfex(data, "%s\n", content_.c_str());
     }
     else
     {
         base::sprintfex(data, "%s [%s][%d] - %s -- <%s,%d,%s>\n",
-                    _time,
-                    LogLevelName[_level],
-                    _tid,
-                    _content.c_str(),
-                    _file.data(),
-                    _line,
-                    _func);
+                    time_,
+                    LogLevelName[level_],
+                    tid_,
+                    content_.c_str(),
+                    file_.data(),
+                    line_,
+                    func_);
     }
 }

@@ -9,33 +9,33 @@
 #define MAX_LOG_BUF_SIZE 1024000
 
 AsyncLogging::AsyncLogging(const char * fileName):
-    _running(true),
-    _output(new LogFile())
+    running_(true),
+    output_(new LogFile())
 {
 
     loadConfig(fileName);
     //start the thread
-    _thread = std::thread(std::bind(&AsyncLogging::threadFunc, this));
+    thread_ = std::thread(std::bind(&AsyncLogging::threadFunc, this));
 }
 
 AsyncLogging::~AsyncLogging()
 {
     //stop the running thread
-    _running = false;
-    _cond.notify_one();
-    _thread.join();
+    running_ = false;
+    cond_.notify_one();
+    thread_.join();
 }
 
 void AsyncLogging::loadConfig(const char * fileName)
 {
     ConfigReader cfgFile(fileName);
-    _flushInterval = cfgFile.GetNameInt("FlushInterval", DEF_FLUSHINTERVAL);
-    if(_flushInterval < DEF_FLUSHINTERVAL)
+    flushInterval_ = cfgFile.GetNameInt("FlushInterval", DEF_FLUSHINTERVAL);
+    if(flushInterval_ < DEF_FLUSHINTERVAL)
     {
-        _flushInterval = DEF_FLUSHINTERVAL;
+        flushInterval_ = DEF_FLUSHINTERVAL;
     }
-    _level = cfgFile.GetNameInt("Level", Logger::INFO);
-    _print = cfgFile.GetNameInt("Print", true);
+    level_ = cfgFile.GetNameInt("Level", Logger::INFO);
+    print_ = cfgFile.GetNameInt("Print", true);
 
 
     std::string logFolder = cfgFile.GetNameStr("Folder", "log");
@@ -48,21 +48,21 @@ void AsyncLogging::loadConfig(const char * fileName)
     }
 
 
-    _output->setLogFolder(logFolder);
-    _output->setBaseName(baseName);
-    _output->setRollSize(rollSize);
-    _output->setFlushInterval(_flushInterval);
-    _output->setAutoRm(autoRm);
+    output_->setLogFolder(logFolder);
+    output_->setBaseName(baseName);
+    output_->setRollSize(rollSize);
+    output_->setFlushInterval(flushInterval_);
+    output_->setAutoRm(autoRm);
 }
 
 void AsyncLogging::append(LoggerPtr && logger)
 {
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _loggers.emplace_back(std::move(logger));
+        std::unique_lock<std::mutex> lock(mutex_);
+        loggers_.emplace_back(std::move(logger));
     }
 
-    _cond.notify_one();
+    cond_.notify_one();
 }
 
 void AsyncLogging::threadFunc()
@@ -72,21 +72,21 @@ void AsyncLogging::threadFunc()
         LoggerList loggers;
 
         {
-            std::unique_lock<std::mutex> lock(_mutex);
+            std::unique_lock<std::mutex> lock(mutex_);
 
-            while(_loggers.empty())
+            while(loggers_.empty())
             {
-                if(!_running)
+                if(!running_)
                 {
-                    _output->append("log thread exit!!!\n");
+                    output_->append("log thread exit!!!\n");
                     return;
                 }
 
-                _output->append(NULL, 0);
-                _cond.wait_for(lock, std::chrono::seconds(_flushInterval));
+                output_->append(NULL, 0);
+                cond_.wait_for(lock, std::chrono::seconds(flushInterval_));
             }
 
-            loggers.swap(_loggers);
+            loggers.swap(loggers_);
         }
 
 
@@ -100,7 +100,7 @@ void AsyncLogging::threadFunc()
             pLogger->format(data);
 
             outputBuf.append(data.c_str(), data.size());
-            if((_print && pLogger->level() == Logger::INFO) || pLogger->raw())
+            if((print_ && pLogger->level() == Logger::INFO) || pLogger->raw())
             {
                 printBuf.append(data.c_str(), data.size());
             }
@@ -108,7 +108,7 @@ void AsyncLogging::threadFunc()
             //write the log buffer to destination
             if(outputBuf.size() > MAX_LOG_BUF_SIZE || it == loggers.end())
             {
-                _output->append(outputBuf.data(), outputBuf.size());
+                output_->append(outputBuf.data(), outputBuf.size());
                 outputBuf.clear();
             }
 

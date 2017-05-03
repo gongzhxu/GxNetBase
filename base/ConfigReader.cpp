@@ -6,9 +6,9 @@
 #include "BaseUtil.h"
 
 ConfigReader::ConfigReader(const char * filename):
-    _cfgFile(filename)
+    cfgFile_(filename)
 {
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lock(mutex_);
     _LoadFile();
 }
 
@@ -44,9 +44,9 @@ std::string ConfigReader::GetNameStr(const char * name, const char * defvalue)
 {
 	std::string value = defvalue;
 	{
-        std::unique_lock<std::mutex> lock(_mutex);
-        ConfigMap::iterator it = _cfgMap.find(name);
-        if (it != _cfgMap.end())
+        std::unique_lock<std::mutex> lock(mutex_);
+        ConfigMap::iterator it = cfgMap_.find(name);
+        if (it != cfgMap_.end())
         {
             value = it->second;
         }
@@ -64,26 +64,26 @@ std::string ConfigReader::GetNameStr( int id, const char * name, const char * de
 
 int ConfigReader::SetConfigValue(const char* name, const char * value)
 {
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> lock(mutex_);
 
-    ConfigMap::iterator it = _cfgMap.find(name);
-    if(it != _cfgMap.end())
+    ConfigMap::iterator it = cfgMap_.find(name);
+    if(it != cfgMap_.end())
     {
         it->second = value;
     }
     else
     {
-        _cfgMap.insert(std::make_pair(name, value));
+        cfgMap_.insert(std::make_pair(name, value));
     }
     return _WriteFIle();
 }
 
 void ConfigReader::_LoadFile()
 {
-	FILE* fp = fopen(_cfgFile.c_str(), "r");
+	FILE* fp = fopen(cfgFile_.c_str(), "r");
 	if (!fp)
 	{
-        ASSERT_MSG("open configfile=%s,error=%s\n", _cfgFile.c_str(), strerror(errno));
+        ASSERT_MSG("open configfile=%s,error=%s\n", cfgFile_.c_str(), strerror(errno));
 		return;
 	}
 
@@ -115,15 +115,15 @@ void ConfigReader::_LoadFile()
 
 int ConfigReader::_WriteFIle()
 {
-   FILE * fp = fopen(_cfgFile.c_str(), "w");
+   FILE * fp = fopen(cfgFile_.c_str(), "w");
    if(fp == nullptr)
    {
        return -1;
    }
 
    char szPaire[128] = {0};
-   ConfigMap::iterator it = _cfgMap.begin();
-   for(; it != _cfgMap.end(); it++)
+   ConfigMap::iterator it = cfgMap_.begin();
+   for(; it != cfgMap_.end(); it++)
    {
         memset(szPaire, 0, sizeof(szPaire));
         snprintf(szPaire, sizeof(szPaire), "%s=%s\n", it->first.c_str(), it->second.c_str());
@@ -148,7 +148,7 @@ void ConfigReader::_ParseLine(char * line)
 	char* value = _TrimSpace(p + 1);
 	if(key && value)
 	{
-		_cfgMap.insert(std::make_pair(key, value));
+		cfgMap_.insert(std::make_pair(key, value));
 	}
 }
 

@@ -31,10 +31,10 @@ public:
     void addServer(ConnInfo & ci)
     {
         {
-            std::unique_lock<std::mutex> lock(_mutex);
-            _connList.insert(ci);
+            std::unique_lock<std::mutex> lock(mutex_);
+            connList_.insert(ci);
         }
-        _loop->runInLoop(std::bind(&TcpServer::addServerInLoop<T>, this, ci));
+        loop_->runInLoop(std::bind(&TcpServer::addServerInLoop<T>, this, ci));
     }
 
     void delServer(ConnInfo & ci);
@@ -44,13 +44,13 @@ private:
     template<typename T>
     void addServerInLoop(ConnInfo & ci)
     {
-        struct evconnlistener * listener = _listeners[ci];
+        struct evconnlistener * listener = listeners_[ci];
         if(!listener)
         {
             sockaddr_storage sockAddr;
             int sockLen = base::makeAddr(ci.getCurrAddrInfo(), sockAddr);
 
-            _listeners[ci] = evconnlistener_new_bind(_loop->get_event(), onAccept<T>, this,
+            listeners_[ci] = evconnlistener_new_bind(loop_->get_event(), onAccept<T>, this,
                             LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
                             (const sockaddr *)&sockAddr, sockLen);
         }
@@ -86,13 +86,13 @@ private:
     void onClose(const BaseConnPtr & pConn);
     void onMessage(const BaseConnPtr & pConn);
 private:
-    EventLoop *             _loop;
-    struct evconnlistener * _listener;
+    EventLoop *             loop_;
+    struct evconnlistener * listener_;
 
-    std::mutex               _mutex;
-    std::set<ConnInfo>      _connList;
+    std::mutex               mutex_;
+    std::set<ConnInfo>      connList_;
 
-    ListenMap_t              _listeners;
+    ListenMap_t              listeners_;
 };
 
 #endif

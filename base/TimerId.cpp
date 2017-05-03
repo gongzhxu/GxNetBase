@@ -6,37 +6,37 @@
 #include "EventLoop.h"
 
 TimerObj::TimerObj(EventLoop * loop, TimerId timerId, const struct timeval & tv, const Functor && cb, int type):
-    _loop(loop),
-    _timer(nullptr),
-    _tv(tv),
-    _cb(std::move(cb)),
-    _timerId(timerId),
-    _type(type)
+    loop_(loop),
+    timer_(nullptr),
+    tv_(tv),
+    cb_(std::move(cb)),
+    timerId_(timerId),
+    type_(type)
 {
-    _loop->assertInLoopThread();
-    if(_type == TIMER_ONCE)
+    loop_->assertInLoopThread();
+    if(type_ == TIMER_ONCE)
     {
-        _timer = evtimer_new(_loop->get_event(), handleTimer, this);
+        timer_ = evtimer_new(loop_->get_event(), handleTimer, this);
     }
     else
     {
-        _timer = event_new(_loop->get_event(), -1, EV_PERSIST, handleTimer, this);
+        timer_ = event_new(loop_->get_event(), -1, EV_PERSIST, handleTimer, this);
     }
-    ASSERT_ABORT(_timer);
-    evtimer_add(_timer, &_tv);
+    ASSERT_ABORT(timer_);
+    evtimer_add(timer_, &tv_);
 }
 
 TimerObj::~TimerObj()
 {
-    _loop->assertInLoopThread();
-    evtimer_del(_timer);
-    event_free(_timer);
+    loop_->assertInLoopThread();
+    evtimer_del(timer_);
+    event_free(timer_);
 }
 
 TimerId TimerObj::createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type)
 {
-    static std::atomic<TimerId> g_timerId(0);
-    TimerId timerId = ++g_timerId;
+    static std::atomic<TimerId> gtimerId_(0);
+    TimerId timerId = ++gtimerId_;
     loop->runInLoop(std::bind(&TimerObj::startTimer, loop, timerId, tv, cb, type));
     return timerId;
 }
@@ -59,10 +59,10 @@ void TimerObj::stopTimer(EventLoop * loop, TimerId TimerId)
 
 void TimerObj::onTimer()
 {
-    _cb();
-    if(_type == TIMER_ONCE)
+    cb_();
+    if(type_ == TIMER_ONCE)
     {
-        stopTimer(_loop, _timerId);
+        stopTimer(loop_, timerId_);
     }
 }
 

@@ -12,50 +12,50 @@ class SourceFile
 public:
     template<int N>
     inline SourceFile(const char (&arr)[N]):
-        _data(arr),
-        _size(N-1)
+        data_(arr),
+        size_(N-1)
     {
-        const char* slash = strrchr(_data, '/');
+        const char* slash = strrchr(data_, '/');
         if(slash)
         {
-            _data = slash + 1;
-            _size -= static_cast<int>(_data - arr);
+            data_ = slash + 1;
+            size_ -= static_cast<int>(data_ - arr);
         }
         else
         {
-            slash = strrchr(_data, '\\');
+            slash = strrchr(data_, '\\');
             if(slash)
             {
-                _data = slash + 1;
-                _size -= static_cast<int>(_data - arr);
+                data_ = slash + 1;
+                size_ -= static_cast<int>(data_ - arr);
             }
         }
     }
 
     explicit SourceFile(const char * filename)
-        :_data(filename)
+        :data_(filename)
     {
         const char* slash = strrchr(filename, '/');
         if(slash)
         {
-            _data = slash + 1;
-            _size = static_cast<int>(strlen(_data));
+            data_ = slash + 1;
+            size_ = static_cast<int>(strlen(data_));
         }
         else
         {
             slash = strrchr(filename, '\\');
             if(slash)
             {
-                _data = slash + 1;
-                _size = static_cast<int>(strlen(_data));
+                data_ = slash + 1;
+                size_ = static_cast<int>(strlen(data_));
             }
         }
     }
 
-    const char * data() { return _data; }
+    const char * data() { return data_; }
 private:
-    const char * _data;
-    int _size;
+    const char * data_;
+    int size_;
 };
 
 class Logger;
@@ -80,22 +80,22 @@ public:
     Logger(LogLevel level, const char * file, int line, const char * func, const char * fmt, ...);
     ~Logger();
 
-    LogLevel level() const { return _level; }
-    bool raw() { return _raw; }
+    LogLevel level() const { return level_; }
+    bool raw() { return raw_; }
     size_t format(char * data, size_t len);
     void format(std::string & data);
 private:
     void formatTime();
 
 private:
-    LogLevel    _level;
-    int         _tid;
-    SourceFile  _file;
-    int         _line;
-    const char * _func;
-    char        _time[64];
-    std::string _content;
-    bool        _raw;
+    LogLevel    level_;
+    int         tid_;
+    SourceFile  file_;
+    int         line_;
+    const char * func_;
+    char        time_[64];
+    std::string content_;
+    bool        raw_;
 };
 
 #endif // _LOGGER_H

@@ -24,9 +24,9 @@ public:
     {
         BaseConnPtr pConn = nullptr;
         {
-            std::unique_lock<std::mutex> lock(_mutex);
-            auto it = _connMap.find(key);
-            if(it != _connMap.end())
+            std::unique_lock<std::mutex> lock(mutex_);
+            auto it = connMap_.find(key);
+            if(it != connMap_.end())
             {
                 pConn = it->second;
             }
@@ -37,9 +37,9 @@ public:
 
     bool hasConn(const T & key)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-       auto it = _connMap.find(key);
-        if(it != _connMap.end())
+        std::unique_lock<std::mutex> lock(mutex_);
+       auto it = connMap_.find(key);
+        if(it != connMap_.end())
         {
             return true;
         }
@@ -49,9 +49,9 @@ public:
 
     bool hasConn(const T & key, const BaseConnPtr & pConn)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        auto it = _connMap.find(key);
-        if(it != _connMap.end() && it->second == pConn)
+        std::unique_lock<std::mutex> lock(mutex_);
+        auto it = connMap_.find(key);
+        if(it != connMap_.end() && it->second == pConn)
         {
             return true;
         }
@@ -61,62 +61,62 @@ public:
 
     void addConn(const T & key, const BaseConnPtr & pConn)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _connMap[key] =  pConn;
+        std::unique_lock<std::mutex> lock(mutex_);
+        connMap_[key] =  pConn;
     }
 
     void setConn(const T & key, const BaseConnPtr & pConn)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _connMap[key] =  pConn;
+        std::unique_lock<std::mutex> lock(mutex_);
+        connMap_[key] =  pConn;
     }
 
     void delConn(const T & key, const BaseConnPtr &)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _connMap.erase(key);
+        std::unique_lock<std::mutex> lock(mutex_);
+        connMap_.erase(key);
     }
 
     void delConn(const T & key)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _connMap.erase(key);
+        std::unique_lock<std::mutex> lock(mutex_);
+        connMap_.erase(key);
     }
 
 
     void stopConn()
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        for(auto it = _connMap.begin(); it != _connMap.end(); ++it)
+        std::unique_lock<std::mutex> lock(mutex_);
+        for(auto it = connMap_.begin(); it != connMap_.end(); ++it)
         {
             (it->second)->shutdown();
         }
 
-        _connMap.clear();
+        connMap_.clear();
     }
 
     void sendPdu(const std::shared_ptr<void> & pdu)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        for(auto it = _connMap.begin(); it != _connMap.end(); ++it)
+        std::unique_lock<std::mutex> lock(mutex_);
+        for(auto it = connMap_.begin(); it != connMap_.end(); ++it)
         {
             (it->second)->sendPdu(pdu);
         }
     }
 
-    size_t size() { return _connMap.size(); }
+    size_t size() { return connMap_.size(); }
 
     void getAllConn(ConnList_t & connList)
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        for(auto it = _connMap.begin(); it != _connMap.end(); ++it)
+        std::unique_lock<std::mutex> lock(mutex_);
+        for(auto it = connMap_.begin(); it != connMap_.end(); ++it)
         {
             connList.emplace_back(it->second);
         }
     }
 private:
-    std::mutex _mutex;
-    ConnMap_t _connMap;
+    std::mutex mutex_;
+    ConnMap_t connMap_;
 };
 
 #endif

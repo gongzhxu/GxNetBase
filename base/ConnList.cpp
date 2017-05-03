@@ -5,16 +5,16 @@ BaseConnPtr ConnList::getNextConn()
 {
     BaseConnPtr pConn = nullptr;
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        size_t listSize = _connList.size();
-        if(_next >= listSize)
+        std::unique_lock<std::mutex> lock(mutex_);
+        size_t listSize = connList_.size();
+        if(next_ >= listSize)
         {
-            _next = 0;
+            next_ = 0;
         }
 
         if(listSize > 0)
         {
-           pConn = _connList[_next++];
+           pConn = connList_[next_++];
         }
     }
 
@@ -23,18 +23,18 @@ BaseConnPtr ConnList::getNextConn()
 
 void ConnList::addConn(const BaseConnPtr & pConn)
 {
-    std::unique_lock<std::mutex> lock(_mutex);
-    _connList.emplace_back(pConn);
+    std::unique_lock<std::mutex> lock(mutex_);
+    connList_.emplace_back(pConn);
 }
 
 void ConnList::delConn(const BaseConnPtr & pConn)
 {
-    std::unique_lock<std::mutex> lock(_mutex);
-    for(size_t i = 0; i < _connList.size(); ++i)
+    std::unique_lock<std::mutex> lock(mutex_);
+    for(size_t i = 0; i < connList_.size(); ++i)
     {
-        if(_connList[i] == pConn)
+        if(connList_[i] == pConn)
         {
-            _connList.erase(_connList.begin() + i);
+            connList_.erase(connList_.begin() + i);
             break;
         }
     }

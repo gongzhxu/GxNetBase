@@ -7,46 +7,46 @@
 #include "EventLoop.h"
 
 FileNotify::FileNotify(EventLoop * loop):
-    _loop(loop),
-    _notifyFd(inotify_init1(IN_NONBLOCK|IN_CLOEXEC)),
-    _bufev(bufferevent_socket_new(_loop->get_event(), _notifyFd, BEV_OPT_CLOSE_ON_FREE))
+    loop_(loop),
+    notifyFd_(inotify_init1(IN_NONBLOCK|IN_CLOEXEC)),
+    bufev_(bufferevent_socket_new(loop_->get_event(), notifyFd_, BEV_OPT_CLOSE_ON_FREE))
 {
-    bufferevent_setcb(_bufev, read_cb, nullptr, nullptr, this);
-    bufferevent_enable(_bufev, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
+    bufferevent_setcb(bufev_, read_cb, nullptr, nullptr, this);
+    bufferevent_enable(bufev_, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
 }
 
 FileNotify::~FileNotify()
 {
-    bufferevent_free(_bufev);
-    _notifyFd = -1;
+    bufferevent_free(bufev_);
+    notifyFd_ = -1;
 }
 
 bool FileNotify::addWatch(const char * name, const Functor && cb)
 {
-    _loop->assertInLoopThread();
-    int wd = inotify_add_watch(_notifyFd, name, IN_MODIFY);
+    loop_->assertInLoopThread();
+    int wd = inotify_add_watch(notifyFd_, name, IN_MODIFY);
     if(wd == -1)
     {
         LOG_ERROR("read errno=%d, error:%s", name, strerror(errno));
-        _fileMap.erase(name);
+        fileMap_.erase(name);
         return false;
     }
 
     FileNotifyImpl::FileInfo info(wd, name, std::move(cb));
-    _notifyMap.insert(std::make_pair(wd, info));
-    _fileMap.insert(std::make_pair(name, wd));
+    notifyMap_.insert(std::make_pair(wd, info));
+    fileMap_.insert(std::make_pair(name, wd));
     return true;
 }
 
 void FileNotify::rmWatch(const char * name)
 {
-    _loop->assertInLoopThread();
-    auto it = _fileMap.find(name);
-    if(it != _fileMap.end())
+    loop_->assertInLoopThread();
+    auto it = fileMap_.find(name);
+    if(it != fileMap_.end())
     {
-        _notifyMap.erase(it->second);
-        inotify_rm_watch(_notifyFd, it->second);
-        _fileMap.erase(it);
+        notifyMap_.erase(it->second);
+        inotify_rm_watch(notifyFd_, it->second);
+        fileMap_.erase(it);
     }
 }
 
@@ -60,8 +60,8 @@ void FileNotify::onRead()
             break;
         }
 
-        auto it = _notifyMap.find(et.wd);
-        if(it == _notifyMap.end())
+        auto it = notifyMap_.find(et.wd);
+        if(it == notifyMap_.end())
         {
             continue;
         }
@@ -75,7 +75,7 @@ void FileNotify::onRead()
         if(et.mask & IN_IGNORED)
         {
             addWatch(info._name.c_str(), std::move(info._cb));
-            _notifyMap.erase(et.wd);
+            notifyMap_.erase(et.wd);
         }
     }
 }
@@ -88,10 +88,10 @@ void FileNotify::read_cb(struct bufferevent * bev, void * ctx)
 
 bool FileNotify::read(void * data, size_t datlen)
 {
-    _loop->assertInLoopThread();
-    assert(_bufev != nullptr);
+    loop_->assertInLoopThread();
+    assert(bufev_ != nullptr);
 
-    struct evbuffer * inputBuffer = bufferevent_get_input(_bufev);
+    struct evbuffer * inputBuffer = bufferevent_get_input(bufev_);
     if(!inputBuffer)
     {
         LOG_ERROR("read errno=%d, error:%s", errno, strerror(errno));
@@ -105,6 +105,6 @@ bool FileNotify::read(void * data, size_t datlen)
         return false;
     }
 
-    ASSERT_ABORT(bufferevent_read(_bufev, data, datlen) == datlen);
+    ASSERT_ABORT(bufferevent_read(bufev_, data, datlen) == datlen);
     return true;
 }

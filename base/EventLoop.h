@@ -24,11 +24,11 @@ public:
     void loop();
     void quit();
 
-    struct event_base * get_event() { return _base; }
+    struct event_base * get_event() { return base_; }
 
     inline bool isInLoopThread() const
     {
-        return _threadId == CurrentThread::tid();
+        return threadId_ == CurrentThread::tid();
     }
 
     inline void assertInLoopThread()
@@ -58,23 +58,23 @@ private:
 
     static void handleWakeup(int fd, short which, void *arg);
 private:
-    int _loopId;
-    int _threadId;
+    int loopId_;
+    int threadId_;
 
-    struct event * _wakeupEvent;
-    int _wakeupFd;
+    struct event * wakeupEvent_;
+    int wakeupFd_;
 
-    struct event_base * _base;
-    bool _quit;
+    struct event_base * base_;
+    bool quit_;
 
-    std::mutex _mutex;
-    FunctorList _pendingFunctors;
-    size_t _sizePendingFunctors;
+    std::mutex mutex_;
+    FunctorList pendingFunctors_;
+    size_t sizePendingFunctors_;
 
-    TimerMap    _timerMap;
+    TimerMap    timerMap_;
     friend TimerObj;
 
-    std::vector<struct event *> _signalEvents;
+    std::vector<struct event *> signalEvents_;
 };
 
 

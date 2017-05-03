@@ -8,15 +8,15 @@
 #include "TcpClient.h"
 
 BaseConn::BaseConn(EventLoop * loop):
-    _loop(loop),
-    _bConnected(false),
-    _bClosed(false),
-    _bShutdownd(false),
-    _bufev(nullptr),
-    _tie(nullptr)
+    loop_(loop),
+    bConnected_(false),
+    bClosed_(false),
+    bShutdownd_(false),
+    bufev_(nullptr),
+    tie_(nullptr)
 {
     LOG_DEBUG("Create Conn:%p", this);
-    assert(_loop != nullptr);
+    assert(loop_ != nullptr);
 }
 
 BaseConn::~BaseConn()
@@ -26,15 +26,15 @@ BaseConn::~BaseConn()
 
 void BaseConn::sendPdu(const std::shared_ptr<void> & pdu)
 {
-    _loop->runInLoop(std::bind(&BaseConn::onWrite, shared_from_this(), pdu));
+    loop_->runInLoop(std::bind(&BaseConn::onWrite, shared_from_this(), pdu));
 }
 
 bool BaseConn::read(void * data, size_t datlen)
 {
-    _loop->assertInLoopThread();
-    assert(_bufev != nullptr);
+    loop_->assertInLoopThread();
+    assert(bufev_ != nullptr);
 
-    struct evbuffer * inputBuffer = bufferevent_get_input(_bufev);
+    struct evbuffer * inputBuffer = bufferevent_get_input(bufev_);
     if(!inputBuffer)
     {
         LOG_ERROR("read errno=%d, error:%s", errno, strerror(errno));
@@ -49,20 +49,20 @@ bool BaseConn::read(void * data, size_t datlen)
         return false;
     }
 
-    ASSERT_ABORT(bufferevent_read(_bufev, data, datlen) == datlen);
+    ASSERT_ABORT(bufferevent_read(bufev_, data, datlen) == datlen);
     return true;
 }
 
 bool BaseConn::write(void * data, size_t datlen)
 {
-    _loop->assertInLoopThread();
+    loop_->assertInLoopThread();
     if(!connected())
     {
         return false;
     }
 
-    assert(_bufev != nullptr);
-    if(bufferevent_write(_bufev, data, datlen) != 0)
+    assert(bufev_ != nullptr);
+    if(bufferevent_write(bufev_, data, datlen) != 0)
     {
         LOG_ERROR("write errno=%d, error:%s", errno, strerror(errno));
         close();
@@ -75,30 +75,30 @@ bool BaseConn::write(void * data, size_t datlen)
 void BaseConn::close()
 {
     //queue in loop is right, or ahaha
-    _loop->queueInLoop(std::bind(&BaseConn::closeInLoop, shared_from_this()));
+    loop_->queueInLoop(std::bind(&BaseConn::closeInLoop, shared_from_this()));
 }
 
 void BaseConn::shutdown()
 {
     //queue in loop is right, or ahaha
-    _bShutdownd = true;
-    _loop->queueInLoop(std::bind(&BaseConn::closeInLoop, shared_from_this()));
+    bShutdownd_ = true;
+    loop_->queueInLoop(std::bind(&BaseConn::closeInLoop, shared_from_this()));
 }
 
 void BaseConn::doAccept(const ConnInfo & ci)
 {
-    _bClosed = false;
-    _connInfo = ci;
-    _tie = shared_from_this();
-    _loop->runInLoop(std::bind(&BaseConn::BuildAccept, shared_from_this()));
+    bClosed_ = false;
+    connInfo_ = ci;
+    tie_ = shared_from_this();
+    loop_->runInLoop(std::bind(&BaseConn::BuildAccept, shared_from_this()));
 }
 
 void BaseConn::doConnect(const ConnInfo & ci)
 {
-    _bClosed = false;
-    _connInfo = ci;
-    _tie = shared_from_this();
-    _loop->runInLoop(std::bind(&BaseConn::BuildConnect, shared_from_this()));
+    bClosed_ = false;
+    connInfo_ = ci;
+    tie_ = shared_from_this();
+    loop_->runInLoop(std::bind(&BaseConn::BuildConnect, shared_from_this()));
 }
 
 void BaseConn::onEvent(short what)
@@ -118,69 +118,69 @@ void BaseConn::onEvent(short what)
 
 void BaseConn::connectInLoop()
 {
-    assert(_loop->isInLoopThread());
-    _bConnected = true;
-    if(_connect_cb)
+    assert(loop_->isInLoopThread());
+    bConnected_ = true;
+    if(connect_cb_)
     {
-        _connect_cb(shared_from_this());
+        connect_cb_(shared_from_this());
     }
 
-    const AddrInfo & addrInfo = _connInfo.getCurrAddrInfo();
-    LOG_DEBUG("new conn this=%p, sa_family=%d, ip=%s, port=%d , fd=%d", this, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), _connInfo.fd());
+    const AddrInfo & addrInfo = connInfo_.getCurrAddrInfo();
+    LOG_DEBUG("new conn this=%p, sa_family=%d, ip=%s, port=%d , fd=%d", this, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), connInfo_.fd());
 
     onConnect();
 }
 
 void BaseConn::closeInLoop()
 {
-    assert(_loop->isInLoopThread());
+    assert(loop_->isInLoopThread());
     if(closed())
     {
         return;
     }
 
-    const AddrInfo & addrInfo = _connInfo.getCurrAddrInfo();
-    LOG_DEBUG("del conn this=%p, sa_family=%d, ip=%s, port=%d , fd=%d", this, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), _connInfo.fd());
+    const AddrInfo & addrInfo = connInfo_.getCurrAddrInfo();
+    LOG_DEBUG("del conn this=%p, sa_family=%d, ip=%s, port=%d , fd=%d", this, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port(), connInfo_.fd());
 
     onClose();
 
-    if(_close_cb)
+    if(close_cb_)
     {
-        _close_cb(shared_from_this());
+        close_cb_(shared_from_this());
     }
 
-    if(_bufev)
+    if(bufev_)
     {
-        bufferevent_free(_bufev);
-        _bufev = nullptr;
+        bufferevent_free(bufev_);
+        bufev_ = nullptr;
     }
 
     //you can use weakptr,but it too complicate, so you have to free manual
     setConnectCallback(ConnCallback());
     setCloseCallback(ConnCallback());
 
-    _bClosed = true;
-    _bConnected = false;
-    _tie.reset();
+    bClosed_ = true;
+    bConnected_ = false;
+    tie_.reset();
 }
 
 void BaseConn::BuildAccept()
 {
-    assert(_loop->isInLoopThread());
-    assert(_bufev == nullptr);
+    assert(loop_->isInLoopThread());
+    assert(bufev_ == nullptr);
 
     do
     {
-        _bufev = bufferevent_socket_new(_loop->get_event(), _connInfo.fd(), BEV_OPT_CLOSE_ON_FREE);
-        if(_bufev == nullptr)
+        bufev_ = bufferevent_socket_new(loop_->get_event(), connInfo_.fd(), BEV_OPT_CLOSE_ON_FREE);
+        if(bufev_ == nullptr)
         {
             LOG_ERROR("memory error on  bufferevent_socket_new");
             break;
         }
 
-        bufferevent_setcb(_bufev, read_cb, nullptr, event_cb, this);
+        bufferevent_setcb(bufev_, read_cb, nullptr, event_cb, this);
         int ret = 0;
-        ret = bufferevent_enable(_bufev, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
+        ret = bufferevent_enable(bufev_, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
         if(ret != 0)
         {
             LOG_ERROR("bufferevent_enable error:%d", ret);
@@ -197,37 +197,37 @@ void BaseConn::BuildAccept()
 
 void BaseConn::BuildConnect()
 {
-    assert(_loop->isInLoopThread());
-    assert(_bufev == nullptr);
+    assert(loop_->isInLoopThread());
+    assert(bufev_ == nullptr);
     do
     {
-        _bufev = bufferevent_socket_new(_loop->get_event(), -1, BEV_OPT_CLOSE_ON_FREE);
-        if(_bufev == nullptr)
+        bufev_ = bufferevent_socket_new(loop_->get_event(), -1, BEV_OPT_CLOSE_ON_FREE);
+        if(bufev_ == nullptr)
         {
             LOG_ERROR("memory error on  bufferevent_socket_new");
             break;
         }
 
-        bufferevent_setcb(_bufev, read_cb, nullptr, event_cb, this);
+        bufferevent_setcb(bufev_, read_cb, nullptr, event_cb, this);
 
         int ret = 0;
-        ret = bufferevent_enable(_bufev, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
+        ret = bufferevent_enable(bufev_, EV_READ|EV_WRITE|EV_PERSIST|EV_ET);
         if(ret != 0)
         {
             LOG_ERROR("bufferevent_enable error:%d", ret);
             break;
         }
         //FIXME: please use async resolve the hostname
-        const AddrInfo & addrInfo = _connInfo.getNextAddrInfo();
+        const AddrInfo & addrInfo = connInfo_.getNextAddrInfo();
         LOG_INFO("begin connect sa_family=%d, ip=%s, port=%d", addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
-        ret = bufferevent_socket_connect_hostname(_bufev, nullptr, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
+        ret = bufferevent_socket_connect_hostname(bufev_, nullptr, addrInfo.sa_family(), addrInfo.ip().c_str(), addrInfo.port());
         if(ret != 0)
         {
-            LOG_ERROR("bufferevent_socket_connect_hostname error:%d", ret);
+            LOG_ERROR("bufferevent_socket_connecthostname_ error:%d", ret);
             break;
         }
 
-        _connInfo.setFd(bufferevent_getfd(_bufev));
+        connInfo_.setFd(bufferevent_getfd(bufev_));
         LOG_DEBUG("connect the server...");
         return;
 

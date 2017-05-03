@@ -55,11 +55,11 @@ public:
     bool read(void * data, size_t datlen);
 
 private:
-    EventLoop *            _loop;
-    int                      _notifyFd;
-    struct bufferevent *    _bufev;
-    std::map<int, FileNotifyImpl::FileInfo> _notifyMap;
-    std::map<std::string, int> _fileMap;
+    EventLoop *            loop_;
+    int                      notifyFd_;
+    struct bufferevent *    bufev_;
+    std::map<int, FileNotifyImpl::FileInfo> notifyMap_;
+    std::map<std::string, int> fileMap_;
 };
 
 #endif

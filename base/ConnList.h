@@ -15,7 +15,7 @@ class ConnList
 public:
     typedef std::vector<BaseConnPtr> ConnList_t;
 
-    ConnList():_next(0) {};
+    ConnList():next_(0) {};
     ~ConnList() {};
 
     BaseConnPtr getNextConn();
@@ -24,11 +24,11 @@ public:
     void addConn(const BaseConnPtr & pConn);
     void delConn(const BaseConnPtr & pConn);
 
-    size_t size() { return _connList.size(); }
+    size_t size() { return connList_.size(); }
 private:
-    std::mutex _mutex;
-    ConnList_t _connList;
-    size_t _next;
+    std::mutex mutex_;
+    ConnList_t connList_;
+    size_t next_;
 };
 
 #endif

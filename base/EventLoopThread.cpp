@@ -4,50 +4,50 @@
 #include "EventLoop.h"
 
 EventLoopThread::EventLoopThread(int loopId):
-    _loopId(loopId),
-    _loop(nullptr)
+    loopId_(loopId),
+    loop_(nullptr)
 {
 
 }
 
 EventLoopThread::~EventLoopThread()
 {
-    if(_loop)
+    if(loop_)
     {
-        _loop->quit();
+        loop_->quit();
     }
 
-    if(_thread.joinable())
-        _thread.join();
+    if(thread_.joinable())
+        thread_.join();
 }
 
 EventLoop * EventLoopThread::startLoop()
 {
-    assert(_loop == nullptr);
+    assert(loop_ == nullptr);
 
-    _thread = std::thread(std::bind(&EventLoopThread::threadFunc, this));
+    thread_ = std::thread(std::bind(&EventLoopThread::threadFunc, this));
 
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        while(_loop == nullptr)
+        std::unique_lock<std::mutex> lock(mutex_);
+        while(loop_ == nullptr)
         {
-            _cond.wait(lock);
+            cond_.wait(lock);
         }
     }
 
-    return _loop;
+    return loop_;
 }
 
 void EventLoopThread::threadFunc()
 {
-    EventLoop loop(_loopId);
+    EventLoop loop(loopId_);
 
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _loop = &loop;
-        _cond.notify_one();
+        std::unique_lock<std::mutex> lock(mutex_);
+        loop_ = &loop;
+        cond_.notify_one();
     }
 
     loop.loop();
-    _loop = nullptr;
+    loop_ = nullptr;
 }

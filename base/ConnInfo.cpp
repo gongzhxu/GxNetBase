@@ -3,47 +3,47 @@
 
 void ConnInfo::addAddrInfo(const AddrInfo & info)
 {
-    _addrinfo.emplace_back(info);
+    addrinfo_.emplace_back(info);
 }
 
 void ConnInfo::addAddrInfo(int sa_family, std::string ip, uint32_t port)
 {
-    _addrinfo.emplace_back(AddrInfo(sa_family, ip, port));
+    addrinfo_.emplace_back(AddrInfo(sa_family, ip, port));
 }
 
 const AddrInfo & ConnInfo::getNextAddrInfo()
 {
-    if(_addrinfo.size() == 0)
+    if(addrinfo_.size() == 0)
     {
         static AddrInfo addrInfo;
         return addrInfo;
     }
 
-    if(_next >= _addrinfo.size())
+    if(next_ >= addrinfo_.size())
     {
-        _next = 0;
+        next_ = 0;
     }
 
-    return _addrinfo[_next++];
+    return addrinfo_[next_++];
 }
 
 const AddrInfo & ConnInfo::getCurrAddrInfo()
 {
-    if(_addrinfo.size() == 0)
+    if(addrinfo_.size() == 0)
     {
         static AddrInfo addrInfo;
         return addrInfo;
     }
 
     size_t curr = 0;
-    if(_next > 0)
+    if(next_ > 0)
     {
-        curr = _next-1;
-        if(curr >= _addrinfo.size())
+        curr = next_-1;
+        if(curr >= addrinfo_.size())
         {
             curr = 0;
         }
     }
 
-    return _addrinfo[curr];
+    return addrinfo_[curr];
 }

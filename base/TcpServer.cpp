@@ -5,10 +5,10 @@
 #include "BaseUtil.h"
 
 TcpServer::TcpServer(EventLoop * loop):
-    _loop(loop),
-    _listener(nullptr)
+    loop_(loop),
+    listener_(nullptr)
 {
-    assert(_loop != nullptr);
+    assert(loop_ != nullptr);
 }
 
 TcpServer::~TcpServer()
@@ -18,30 +18,30 @@ TcpServer::~TcpServer()
 void TcpServer::delServer(ConnInfo & ci)
 {
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _connList.erase(ci);
+        std::unique_lock<std::mutex> lock(mutex_);
+        connList_.erase(ci);
     }
-    _loop->runInLoop(std::bind(&TcpServer::delServerInLoop, this, ci));
+    loop_->runInLoop(std::bind(&TcpServer::delServerInLoop, this, ci));
 }
 
 void TcpServer::delServerInLoop(ConnInfo & ci)
 {
-    auto it = _listeners.find(ci);
-    if(it != _listeners.end() && it->second)
+    auto it = listeners_.find(ci);
+    if(it != listeners_.end() && it->second)
     {
         struct evconnlistener * listener = it->second;
         if(listener)
         {
-            evconnlistener_free(_listener);
-            _listeners.erase(it);
+            evconnlistener_free(listener_);
+            listeners_.erase(it);
         }
     }
 }
 
 void TcpServer::getConnInfo(std::vector<ConnInfo> & connList)
 {
-    std::unique_lock<std::mutex> lock(_mutex);
-    for(auto it = _connList.begin(); it != _connList.end(); ++it)
+    std::unique_lock<std::mutex> lock(mutex_);
+    for(auto it = connList_.begin(); it != connList_.end(); ++it)
     {
         connList.push_back(*it);
     }

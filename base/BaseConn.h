@@ -37,15 +37,15 @@ public:
     void doAccept(const ConnInfo & ci);
     void doConnect(const ConnInfo & ci);
 
-    inline EventLoop * getLoop() const { return _loop; }
-    inline bool connected() const { return _bConnected; }
-    inline bool closed() const { return _bClosed; }
-    inline bool shutdownd() const { return _bShutdownd; }
-    inline const ConnInfo & getConnInfo() const { return _connInfo; }
+    inline EventLoop * getLoop() const { return loop_; }
+    inline bool connected() const { return bConnected_; }
+    inline bool closed() const { return bClosed_; }
+    inline bool shutdownd() const { return bShutdownd_; }
+    inline const ConnInfo & getConnInfo() const { return connInfo_; }
 
-    void setConnectCallback(const ConnCallback & cb) { _connect_cb = cb; }
-    void setCloseCallback(const ConnCallback & cb) { _close_cb = cb; }
-    void setMessageCallback(const ConnCallback & cb) { _message_cb = cb; }
+    void setConnectCallback(const ConnCallback & cb) { connect_cb_ = cb; }
+    void setCloseCallback(const ConnCallback & cb) { close_cb_ = cb; }
+    void setMessageCallback(const ConnCallback & cb) { message_cb_ = cb; }
 protected:
     virtual void onConnect() {}
     virtual void onClose() {}
@@ -63,20 +63,20 @@ private:
     static void read_cb(struct bufferevent * bev, void * ctx);
     static void event_cb(struct bufferevent * bev, short what, void * ctx);
 private:
-    EventLoop * _loop; // the event loop
-    bool _bConnected; // the connect flag
-    bool _bClosed; // the close flag
-    bool _bShutdownd; // the shutdown flag
-    ConnInfo _connInfo; // the connection infomation
+    EventLoop * loop_; // the event loop
+    bool bConnected_; // the connect flag
+    bool bClosed_; // the close flag
+    bool bShutdownd_; // the shutdown flag
+    ConnInfo connInfo_; // the connection infomation
 
-    struct bufferevent * _bufev; // the libevent buffer event
+    struct bufferevent * bufev_; // the libevent buffer event
 
-    ConnCallback _connect_cb; // register the connet callback
-    ConnCallback _close_cb; // register the close callback
-    ConnCallback _message_cb;
+    ConnCallback connect_cb_; // register the connet callback
+    ConnCallback close_cb_; // register the close callback
+    ConnCallback message_cb_;
 
     //tie 'this', so can't free object manual
-    std::shared_ptr<void> _tie;
+    std::shared_ptr<void> tie_;
 };
 
 #endif

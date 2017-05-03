@@ -21,23 +21,23 @@ public:
 public:
     void loadConfig(const char * fileName);
     void append(LoggerPtr && logger);
-    int getLogLevel() const { return _level; }
+    int getLogLevel() const { return level_; }
 
 private:
     void threadFunc();
 
 private:
-    int              _flushInterval;
-    int              _level; // log level
-    bool            _print; // print or not
-    bool            _running; // just a flag indicate the thread is running
+    int              flushInterval_;
+    int              level_; // log level
+    bool            print_; // print or not
+    bool            running_; // just a flag indicate the thread is running
 
-    std::thread _thread;
-    std::mutex _mutex;
-    std::condition_variable _cond;
+    std::thread thread_;
+    std::mutex mutex_;
+    std::condition_variable cond_;
 
-    LoggerList                 _loggers; // logger list
-    std::unique_ptr<LogFile> _output;
+    LoggerList                 loggers_; // logger list
+    std::unique_ptr<LogFile> output_;
 };
 
 #endif // _ASYNC_LOGGING_H

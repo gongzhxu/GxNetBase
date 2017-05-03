@@ -29,9 +29,9 @@ private:
     void _ParseLine(char * line);
     char * _TrimSpace(char * name);
 
-    ConfigMap _cfgMap;
-    std::string _cfgFile;
-    std::mutex _mutex;
+    ConfigMap cfgMap_;
+    std::string cfgFile_;
+    std::mutex mutex_;
 };
 
 #endif /* _CONFIG_READER_H_ */

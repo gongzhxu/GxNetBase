@@ -9,55 +9,55 @@
 #include "WeakCallback.h"
 
 EventLoop::EventLoop(int loopId):
-    _loopId(loopId),
-    _threadId(CurrentThread::tid()),
-    _wakeupEvent(nullptr),
-    _wakeupFd(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)),
-    _base(nullptr),
-    _quit(false),
-    _sizePendingFunctors(0)
+    loopId_(loopId),
+    threadId_(CurrentThread::tid()),
+    wakeupEvent_(nullptr),
+    wakeupFd_(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)),
+    base_(nullptr),
+    quit_(false),
+    sizePendingFunctors_(0)
 {
-    ASSERT_ABORT(_wakeupFd > 0);
+    ASSERT_ABORT(wakeupFd_ > 0);
 
-    _base = event_base_new();
-    ASSERT_ABORT(_base);
+    base_ = event_base_new();
+    ASSERT_ABORT(base_);
 
     //'this' contain the '_base' so this is safe
-    _wakeupEvent= event_new(_base, _wakeupFd, EV_READ| EV_PERSIST, handleWakeup, this);
-    ASSERT_ABORT(_wakeupEvent);
-    ASSERT_ABORT(event_add(_wakeupEvent, nullptr) == 0);
+    wakeupEvent_= event_new(base_, wakeupFd_, EV_READ| EV_PERSIST, handleWakeup, this);
+    ASSERT_ABORT(wakeupEvent_);
+    ASSERT_ABORT(event_add(wakeupEvent_, nullptr) == 0);
 }
 
 EventLoop::~EventLoop()
 {
-    event_base_free(_base);
-    event_free(_wakeupEvent);
-    ::close(_wakeupFd);
-    _wakeupFd = -1;
+    event_base_free(base_);
+    event_free(wakeupEvent_);
+    ::close(wakeupFd_);
+    wakeupFd_ = -1;
 
-    for(size_t i = 0; i < _signalEvents.size(); ++i)
+    for(size_t i = 0; i < signalEvents_.size(); ++i)
     {
-        evsignal_del(_signalEvents[i]);
+        evsignal_del(signalEvents_[i]);
     }
 }
 
 void EventLoop::loop()
 {
-    assert(_base != nullptr);
+    assert(base_ != nullptr);
 
-    while(!_quit)
+    while(!quit_)
     {
-        event_base_loop(_base, EVLOOP_ONCE);
+        event_base_loop(base_, EVLOOP_ONCE);
         doPendingFunctors();
     }
-    LOG_INFO("loop quited %p, _pendingFunctors=%d", this, _sizePendingFunctors);
+    LOG_INFO("loop quited %p, pendingFunctors_=%d", this, sizePendingFunctors_);
 }
 
 //not thread safe, please close eventloop in the loop thread
 void EventLoop::quit()
 {
     LOG_DEBUG("event loop quiting %p...", this);
-    _quit = true;
+    quit_ = true;
     wakeup();
 }
 
@@ -80,9 +80,9 @@ void EventLoop::queueInLoop(const Functor && cb)
     size_t sizePendingFunctors = 0;
 
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        sizePendingFunctors = _sizePendingFunctors++;
-        _pendingFunctors.emplace_back(std::move(cb));
+        std::unique_lock<std::mutex> lock(mutex_);
+        sizePendingFunctors = sizePendingFunctors_++;
+        pendingFunctors_.emplace_back(std::move(cb));
     }
 
     if(sizePendingFunctors == 0)
@@ -108,19 +108,19 @@ void EventLoop::cancel(TimerId timer)
 
 void EventLoop::addSignal(evutil_socket_t x, event_callback_fn cb, void * arg)
 {
-    struct event * se = evsignal_new(_base, x, cb, arg);
+    struct event * se = evsignal_new(base_, x, cb, arg);
     ASSERT_ABORT(se);
     evsignal_add(se, nullptr);
-    _signalEvents.emplace_back(se);
+    signalEvents_.emplace_back(se);
 }
 
 void EventLoop::doPendingFunctors()
 {
     FunctorList functors;
     {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _sizePendingFunctors = 0;
-        functors.swap(_pendingFunctors);
+        std::unique_lock<std::mutex> lock(mutex_);
+        sizePendingFunctors_ = 0;
+        functors.swap(pendingFunctors_);
     }
 
     for(FunctorList::iterator it = functors.begin(); it != functors.end(); ++it)
@@ -131,22 +131,18 @@ void EventLoop::doPendingFunctors()
 
 void EventLoop::addTimer(TimerId timerId, std::unique_ptr<TimerObj> & timerObj)
 {
-    _timerMap.insert(std::make_pair(timerId, std::move(timerObj)));
+    timerMap_.insert(std::make_pair(timerId, std::move(timerObj)));
 }
 
 void EventLoop::delTimer(TimerId timerId)
 {
-    auto it = _timerMap.find(timerId);
-    if(it != _timerMap.end())
-    {
-        _timerMap.erase(it);
-    }
+    timerMap_.erase(timerId);
 }
 
 void EventLoop::wakeup()
 {
     uint64_t one = 1;
-    ssize_t n = ::write(_wakeupFd, &one, sizeof one);
+    ssize_t n = ::write(wakeupFd_, &one, sizeof one);
     if(n != sizeof one)
     {
         LOG_FATAL("wakeup error:%d, %s", n, strerror(errno));
@@ -156,7 +152,7 @@ void EventLoop::wakeup()
 void EventLoop::handleWakeup()
 {
     uint64_t one = 1;
-    ssize_t n = ::read(_wakeupFd, &one, sizeof one);
+    ssize_t n = ::read(wakeupFd_, &one, sizeof one);
     if (n != sizeof one)
     {
         LOG_FATAL("handleRead error:%d, %s", n, strerror(errno));

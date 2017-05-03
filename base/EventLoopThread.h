@@ -19,12 +19,12 @@ private:
     void threadFunc();
 
 private:
-    int         _loopId;
-    EventLoop * _loop;
+    int         loopId_;
+    EventLoop * loop_;
 
-    std::thread _thread;
-    std::mutex  _mutex;
-    std::condition_variable _cond;
+    std::thread thread_;
+    std::mutex  mutex_;
+    std::condition_variable cond_;
 };
 
 #endif

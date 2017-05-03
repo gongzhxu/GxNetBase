@@ -6,8 +6,8 @@
 #include "EventLoopThread.h"
 
 EventLoopThreadPool::EventLoopThreadPool(EventLoop * baseLoop):
-    _baseLoop(baseLoop),
-    _next(0)
+    baseLoop_(baseLoop),
+    next_(0)
 {
 }
 
@@ -17,36 +17,36 @@ EventLoopThreadPool::~EventLoopThreadPool()
 
 void EventLoopThreadPool::start(int numThreads)
 {
-    _baseLoop->assertInLoopThread();
+    baseLoop_->assertInLoopThread();
     for(int i = 0; i < numThreads; ++i)
     {
         EventLoopThreadPtr elt(MakeEventLoopThreadPtr(i));
-        _threads.emplace_back(elt);
-        _loops.emplace_back(elt->startLoop());
+        threads_.emplace_back(elt);
+        loops_.emplace_back(elt->startLoop());
     }
 }
 
 void EventLoopThreadPool::quit()
 {
-    _baseLoop->assertInLoopThread();
-    for(size_t i = 0; i < _loops.size(); ++i)
+    baseLoop_->assertInLoopThread();
+    for(size_t i = 0; i < loops_.size(); ++i)
     {
-        _loops[i]->quit();
+        loops_[i]->quit();
     }
 }
 
 EventLoop * EventLoopThreadPool::getNextLoop()
 {
-    _baseLoop->assertInLoopThread();
-    EventLoop * loop = _baseLoop;
-    if(!_loops.empty())
+    baseLoop_->assertInLoopThread();
+    EventLoop * loop = baseLoop_;
+    if(!loops_.empty())
     {
-        if(_next >= _loops.size())
+        if(next_ >= loops_.size())
         {
-            _next = 0;
+            next_ = 0;
         }
 
-        loop = _loops[_next++];
+        loop = loops_[next_++];
     }
 
     assert(loop != nullptr);
@@ -55,13 +55,13 @@ EventLoop * EventLoopThreadPool::getNextLoop()
 
 EventLoop * EventLoopThreadPool::getModLoop(int sessionId)
 {
-    _baseLoop->assertInLoopThread();
-    EventLoop * loop = _baseLoop;
-    if(!_loops.empty())
+    baseLoop_->assertInLoopThread();
+    EventLoop * loop = baseLoop_;
+    if(!loops_.empty())
     {
-        sessionId %= _loops.size();
+        sessionId %= loops_.size();
 
-        loop = _loops[sessionId];
+        loop = loops_[sessionId];
     }
 
     return loop;

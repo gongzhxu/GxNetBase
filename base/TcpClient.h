@@ -25,7 +25,7 @@ public:
     template<typename T>
     void addClient(ConnInfo & ci)
     {
-        _loop->runInLoop(std::bind(&TcpClient::addClientInLoop<T>, this, ci));
+        loop_->runInLoop(std::bind(&TcpClient::addClientInLoop<T>, this, ci));
     }
 
     void delClient(ConnInfo & ci);
@@ -33,14 +33,14 @@ public:
     BaseConnPtr getConn(ConnInfo & ci);
     BaseConnPtr getNextConn(int type = 0);
 
-    size_t size() { return _connList.size(); }
+    size_t size() { return connList_.size(); }
 private:
     template<typename T>
     void addClientInLoop(ConnInfo & ci)
     {
-        if(!_connMap.hasConn(ci))
+        if(!connMap_.hasConn(ci))
         {
-            _connMap.addConn(ci, nullptr);
+            connMap_.addConn(ci, nullptr);
             BaseConnPtr  pConn(new T);
             pConn->setConnectCallback(std::bind(&TcpClient::onConnect, this, pConn));
             pConn->setCloseCallback(std::bind(&TcpClient::onClose, this, pConn));
@@ -55,9 +55,9 @@ private:
     void onRetry(const BaseConnPtr & pConn);
 
 private:
-    EventLoop *              _loop;
-    std::map<int, ConnList>  _connList;
-    ConnMap<ConnInfo>       _connMap;
+    EventLoop *              loop_;
+    std::map<int, ConnList>  connList_;
+    ConnMap<ConnInfo>       connMap_;
 
     friend BaseConn;
 };
