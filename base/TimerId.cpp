@@ -35,8 +35,8 @@ TimerObj::~TimerObj()
 
 TimerId TimerObj::createTimer(EventLoop * loop, const struct timeval & tv, const Functor && cb, int type)
 {
-    static std::atomic<TimerId> gtimerId_(0);
-    TimerId timerId = ++gtimerId_;
+    static std::atomic<TimerId> g_timerId(0);
+    TimerId timerId = ++g_timerId;
     loop->runInLoop(std::bind(&TimerObj::startTimer, loop, timerId, tv, cb, type));
     return timerId;
 }
