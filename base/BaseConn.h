@@ -30,6 +30,7 @@ public:
 
     bool read(void * data, size_t datlen);
     bool write(void * data, size_t datlen);
+    bool write(void * data1, size_t datlen1, void * data2, size_t datlen2);
 
     void close();
     void shutdown();

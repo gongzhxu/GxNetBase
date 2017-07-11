@@ -72,6 +72,22 @@ bool BaseConn::write(void * data, size_t datlen)
     return true;
 }
 
+bool BaseConn::write(void * data1, size_t datlen1, void * data2, size_t datlen2)
+{
+    loop_->assertInLoopThread();
+    if(!connected())
+    {
+        return false;
+    }
+
+    assert(bufev_ != nullptr);
+    struct evbuffer * buf = bufferevent_get_output(bufev_);
+    ASSERT_ABORT(evbuffer_expand(buf, datlen1+datlen2) == 0);
+    ASSERT_ABORT(evbuffer_add(buf, data1, datlen1) == 0);
+    ASSERT_ABORT(evbuffer_add(buf, data2, datlen2) == 0);
+    return true;
+}
+
 void BaseConn::close()
 {
     //queue in loop is right, or ahaha
@@ -230,7 +246,6 @@ void BaseConn::BuildConnect()
         connInfo_.setFd(bufferevent_getfd(bufev_));
         LOG_DEBUG("connect the server...");
         return;
-
     }while(0);
 
     closeInLoop();
