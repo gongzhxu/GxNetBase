@@ -3,7 +3,6 @@
 print_help(){
 	echo "Usage:"
 	echo "	$0 base --- make base cbp"
-	echo "	$0 daemon --- make daemon cbp"
 }
 
 check_env(){
@@ -23,13 +22,12 @@ make_cbp(){
 }
 
 case $1 in
-	base|dbproxy|daemon)
+	base|dbproxy)
 		make_cbp $1
 		;;
 	all)
 		make_cbp base
 		make_cbp dbproxy
-		make_cbp daemon
 		;;
 	*)
 		print_help
