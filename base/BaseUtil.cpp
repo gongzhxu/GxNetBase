@@ -25,9 +25,9 @@ void writeinfo(const char * action, uint32_t id, const char * hostname, const ch
         FILE * fp = fopen("server.pid", "r");
         if(fp)
         {
+            char szMsg[1024] = {0};
             for(size_t i = 0; i < MAX_WRITE_INFO-1 && !feof(fp); ++i)
             {
-                char szMsg[1024] = {0};
                 fgets(szMsg, sizeof(szMsg), fp);
                 strMsgs.emplace_back(szMsg);
             }
