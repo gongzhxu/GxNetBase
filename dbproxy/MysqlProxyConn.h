@@ -2,10 +2,6 @@
 #define _MYSQL_PROXY_CONN_H_
 
 #include <string>
-#include <mysql/mysql.h>
-
-#define ROW(nIndex) ((nIndex < nFields && row[nIndex])? row[nIndex]: "")
-#define MYSQLLEN(nIndex) ((nIndex < nFields && len[nIndex])? len[nIndex]: 0)
 
 struct MysqlConnInfo
 {
@@ -16,52 +12,34 @@ struct MysqlConnInfo
     unsigned int port;
 };
 
+typedef struct st_mysql MYSQL;
+typedef struct st_mysql_res MYSQL_RES;
+typedef char **MYSQL_ROW;
+
 class AutoMysqlRes
 {
 public:
-    AutoMysqlRes(MYSQL * mysql):
-        mysql_(mysql),
-        res_(mysql_store_result(mysql))
-    {
-    }
+    AutoMysqlRes(MYSQL * mysql);
+    ~AutoMysqlRes();
 
-    MYSQL_RES * next()
-    {
-        if(res_)
-        {
-            mysql_free_result(res_);
-            res_ = nullptr;
-        }
+    MYSQL_RES * res();
+    int fields();
+    bool next();
 
-        if(!mysql_next_result(mysql_))
-        {
-            res_ = mysql_store_result(mysql_);
-        }
+    bool fetch_row();
+    bool fetch_next_row();
 
-        return res_;
-    }
-
-    ~AutoMysqlRes()
-    {
-        if(res_)
-        {
-            mysql_free_result(res_);
-        }
-
-        while(!mysql_next_result(mysql_))
-        {
-            res_ = mysql_store_result(mysql_);
-            if(res_)
-            {
-                mysql_free_result(res_);
-            }
-        }
-    }
-
-    MYSQL_RES * res() { return res_; }
+    const char * str_row(int i);
+    int int_row(int i);
+    long int long_row(int i);
+    unsigned long len_row(int i);
 private:
     MYSQL * mysql_;
     MYSQL_RES * res_;
+    int fields_;
+
+    MYSQL_ROW row_;
+    unsigned long * len_;
 };
 
 class MysqlProxyConn
@@ -71,11 +49,11 @@ public:
     virtual ~MysqlProxyConn();
 
 public:
-    bool init();
+    bool MysqlInit();
     void release();
     bool autocommit(bool on);
 
-    MYSQL * mysql() { return &mysql_; }
+    MYSQL * mysql() { return mysql_; }
     int num() { return num_; }
 
     std::string escape(const std::string & from);
@@ -86,7 +64,7 @@ public:
 private:
     MysqlConnInfo info_;
 
-    MYSQL       mysql_;
+    MYSQL *     mysql_;
     bool         bConnect_;
     int           num_;
 };

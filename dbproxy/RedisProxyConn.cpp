@@ -1,5 +1,6 @@
 #include "RedisProxyConn.h"
 
+#include <hiredis-vip/hircluster.h>
 #include "base/BaseUtil.h"
 
 #define REDIS_CONNECT_TIMEOUT 200000

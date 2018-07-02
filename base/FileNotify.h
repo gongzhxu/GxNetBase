@@ -5,7 +5,6 @@
 #include <map>
 #include <memory>
 #include <functional>
-#include <event2/event.h>
 
 class EventLoop;
 class FileNotify;

@@ -3,6 +3,10 @@
 #include <unistd.h>
 #include <sys/inotify.h>
 
+#include <event2/event.h>
+#include <event2/bufferevent.h>
+#include <event2/buffer.h>
+
 #include "BaseUtil.h"
 #include "EventLoop.h"
 

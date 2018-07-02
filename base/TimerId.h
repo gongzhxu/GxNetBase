@@ -2,7 +2,6 @@
 #define _TIMER_ID_H_
 
 #include <functional>
-#include <event2/event.h>
 
 class EventLoop;
 

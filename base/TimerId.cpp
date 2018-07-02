@@ -1,6 +1,7 @@
 #include "TimerId.h"
 
 #include <atomic>
+#include <event2/event.h>
 
 #include "BaseUtil.h"
 #include "EventLoop.h"

@@ -5,6 +5,7 @@
 #include <vector>
 #include <inttypes.h>
 
+#define SAFE_A2A(data) (data?data:"")
 #define SAFE_A2I(data) (data?atoi(data):0)
 #define SAFE_A2L(data) (data?atol(data):0)
 

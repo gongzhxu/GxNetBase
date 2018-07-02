@@ -4,14 +4,8 @@
 #include <map>
 #include <memory>
 
-#include <event2/event.h>
-#include <event2/bufferevent.h>
-#include <event2/buffer.h>
-
 #include "ConnInfo.h"
 
-class TcpServer;
-class TcpClient;
 class BaseConn;
 class EventLoop;
 

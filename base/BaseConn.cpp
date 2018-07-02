@@ -2,6 +2,10 @@
 
 #include <assert.h>
 
+#include <event2/event.h>
+#include <event2/bufferevent.h>
+#include <event2/buffer.h>
+
 #include "BaseUtil.h"
 #include "EventLoop.h"
 #include "TcpServer.h"

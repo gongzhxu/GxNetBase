@@ -1,6 +1,7 @@
 #include "TcpServer.h"
 
 #include <assert.h>
+#include <event2/listener.h>
 
 #include "BaseUtil.h"
 
@@ -61,4 +62,9 @@ void TcpServer::onClose(const BaseConnPtr &)
 void TcpServer::onMessage(const BaseConnPtr &)
 {
 
+}
+
+evconnlistener * TcpServer::createServer(struct event_base *base, evconnlistener_cb cb, void *ptr, const struct sockaddr *sa, int socklen)
+{
+    return evconnlistener_new_bind(base, cb, ptr, LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1, sa, socklen);
 }

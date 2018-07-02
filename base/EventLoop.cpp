@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <sys/eventfd.h>
 
+#include <event2/event.h>
+
 #include "BaseUtil.h"
 #include "BaseConn.h"
 #include "WeakCallback.h"
@@ -106,7 +108,7 @@ void EventLoop::cancel(TimerId timer)
     TimerObj::deleteTimer(this, timer);
 }
 
-void EventLoop::addSignal(evutil_socket_t x, event_callback_fn cb, void * arg)
+void EventLoop::addSignal(int x, signal_callback_fn cb, void * arg)
 {
     struct event * se = evsignal_new(base_, x, cb, arg);
     ASSERT_ABORT(se);

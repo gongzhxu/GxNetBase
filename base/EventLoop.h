@@ -6,7 +6,6 @@
 #include <memory>
 #include <thread>
 #include <mutex>
-#include <event2/event.h>
 
 #include "CurrentThread.h"
 #include "TimerId.h"
@@ -17,6 +16,7 @@ public:
     typedef std::function<void()> Functor;
     typedef std::vector<Functor> FunctorList;
     typedef std::map<TimerId, std::unique_ptr<TimerObj> > TimerMap;
+    typedef void (*signal_callback_fn)(int, short, void *);
 
     EventLoop(int loopId = 0);
     ~EventLoop();
@@ -46,7 +46,7 @@ public:
     TimerId runEvery(const struct timeval & tv, const Functor && cb);
     void cancel(TimerId timer);
 
-    void addSignal(evutil_socket_t x, event_callback_fn cb, void * arg);
+    void addSignal(int x, signal_callback_fn cb, void * arg);
 private:
     void doPendingFunctors();
 

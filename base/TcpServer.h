@@ -8,8 +8,6 @@
 #include <string>
 #include <memory>
 
-#include <event2/listener.h>
-
 #include "ConnInfo.h"
 #include "SocketOps.h"
 #include "BaseConn.h"
@@ -22,6 +20,7 @@ typedef std::shared_ptr<TcpServer> TcpServerPtr;
 class TcpServer
 {
 public:
+    typedef void (*evconnlistener_cb)(struct evconnlistener *, int, struct sockaddr *, int socklen, void *);
     typedef std::map<ConnInfo, struct evconnlistener *> ListenMap_t;
 
     TcpServer(EventLoop * loop);
@@ -50,13 +49,13 @@ private:
             sockaddr_storage sockAddr;
             int sockLen = base::makeAddr(ci.getCurrAddrInfo(), sockAddr);
 
-            listeners_[ci] = evconnlistener_new_bind(loop_->get_event(), onAccept<T>, this,
-                            LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
-                            (const sockaddr *)&sockAddr, sockLen);
+            listeners_[ci] = createServer(loop_->get_event(), onAccept<T>, this, (const sockaddr *)&sockAddr, sockLen);
         }
     }
 
     void delServerInLoop(ConnInfo & ci);
+
+    static evconnlistener * createServer(struct event_base *base, evconnlistener_cb cb, void *ptr, const struct sockaddr *sa, int socklen);
 
     template<typename T>
     void onAccept(ConnInfo & ci)
@@ -72,7 +71,7 @@ private:
 
     template<typename T>
     static void onAccept(struct evconnlistener *,
-                        evutil_socket_t sockfd,
+                        int sockfd,
                         struct sockaddr * sockAddr,
                         int sockLen,
                         void * arg)

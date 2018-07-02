@@ -6,7 +6,6 @@
 #include <list>
 #include <map>
 #include <memory>
-#include <hiredis-vip/hircluster.h>
 
 typedef std::vector<std::string> KeyList;
 typedef std::vector<std::string> ItemList;
@@ -17,6 +16,8 @@ typedef std::vector<uint64_t> LONGValueList;
 
 class RedisProxyConn;
 class ConfigReader;
+class redisReply;
+class redisClusterContext;
 
 typedef std::shared_ptr<RedisProxyConn> RedisProxyConnPtr;
 #define MakeRedisProxyConnPtr std::make_shared<RedisProxyConn>
@@ -57,7 +58,6 @@ public:
 private:
     redisReply * _vcommand(const char * format, ...);
 
-private:
     std::string           addrs_;
     redisClusterContext *  context_;
 };

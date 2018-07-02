@@ -10,10 +10,10 @@ SET(PROJECT_BASE_PATH ../)
 
 ADD_DEFINITIONS(-W -Wall -std=c++11)
 
-INCLUDE_DIRECTORIES(./ ${PROJECT_BASE_PATH}) 
+INCLUDE_DIRECTORIES(./ ${PROJECT_BASE_PATH} ../third_party/hiredis_vip/include ../third_party/mysql/include)
 LINK_DIRECTORIES(./ ${PROJECT_BASE_PATH}/base)
 
 ADD_LIBRARY(${PROJECT_NAME} STATIC ${SRC_LIST1})
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} base hiredis_vip mysqlclient_r pthread) 
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} base pthread)
 

@@ -1,8 +1,6 @@
 #ifndef _SOCKET_OPT_H_
 #define _SOCKET_OPT_H_
 
-#define _CRT_SECURE_NO_DEPRECATE	// remove warning C4996,
-
 #include <arpa/inet.h>
 #include <string>
 #include "ConnInfo.h"

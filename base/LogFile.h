@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <memory>
 #include <unistd.h>
-#include "BaseUtil.h"
+
+#include "FileOps.h"
 
 #define DEF_ROLLSIZE 1024*1024*1024
 #define DEF_FLUSHINTERVAL 1
@@ -44,7 +45,7 @@ private:
             fp_(::fopen(filename_.c_str(), "a")),
             writtenBytes_(0)
             {
-                if(!fp_) ABORT_MSG("create logfile=%s,error=%s\n", filename_.c_str(), strerror(errno));
+                if(!fp_) fprintf(stderr, "create logfile=%s,error=%s\n", filename_.c_str(), strerror(errno));
             }
 
         ~File() { fclose(); }
