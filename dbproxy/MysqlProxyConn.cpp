@@ -15,9 +15,18 @@ struct MysqlServiceInit
 
 AutoMysqlRes::AutoMysqlRes(MYSQL * mysql):
         mysql_(mysql),
-        res_(mysql_store_result(mysql)),
-        fields_(mysql_num_fields(res_))
+        res_(nullptr),
+        fields_(0)
 {
+     if(mysql_)
+     {
+        res_ = mysql_store_result(mysql_);
+     }
+
+     if(res_)
+     {
+        fields_ = mysql_num_fields(res_);
+     }
 }
 
 AutoMysqlRes::~AutoMysqlRes()
