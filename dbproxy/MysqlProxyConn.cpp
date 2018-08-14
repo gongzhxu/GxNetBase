@@ -34,6 +34,7 @@ AutoMysqlRes::~AutoMysqlRes()
     if(res_)
     {
         mysql_free_result(res_);
+        res_ = nullptr;
     }
 
     while(!mysql_next_result(mysql_))
@@ -42,6 +43,7 @@ AutoMysqlRes::~AutoMysqlRes()
         if(res_)
         {
             mysql_free_result(res_);
+            res_ = nullptr;
         }
     }
 }
@@ -67,7 +69,7 @@ bool AutoMysqlRes::next()
     if(!mysql_next_result(mysql_))
     {
         res_ = mysql_store_result(mysql_);
-        fields_ = mysql_num_fields(res_);
+        fields_ = res_? mysql_num_fields(res_): 0;
     }
 
     return res_ != NULL;
@@ -217,11 +219,11 @@ bool MysqlProxyConn::escape(const std::string & from, std::string & to)
     }
 }
 
-bool MysqlProxyConn::command(const char * szCmd, int nLength)
+bool MysqlProxyConn::command(std::string & strCmd)
 {
-    LOG_DEBUG("mysql cmd:%s, %d", szCmd, nLength);
+    LOG_DEBUG("mysql cmd:%s, %d", strCmd.c_str(), strCmd.size());
 
-    int nRet = mysql_real_query(mysql_, szCmd, nLength);
+    int nRet = mysql_real_query(mysql_, strCmd.c_str(), strCmd.size());
 	if(nRet != DBRESULT_SUCCESS)
     {
         unsigned int nErr = mysql_errno(mysql_);
@@ -234,7 +236,7 @@ bool MysqlProxyConn::command(const char * szCmd, int nLength)
 			release();
 			if(MysqlInit())
             {
-                nRet = mysql_real_query(mysql_, szCmd, nLength);
+                nRet = mysql_real_query(mysql_, strCmd.c_str(), strCmd.size());
             }
 		}
     }
@@ -248,9 +250,9 @@ bool MysqlProxyConn::command(const char * szCmd, int nLength)
     return true;
 }
 
-bool MysqlProxyConn::query(const char * szCmd)
+bool MysqlProxyConn::query(std::string & strCmd)
 {
-    int nRet = mysql_query(mysql_, szCmd);
+    int nRet = mysql_query(mysql_, strCmd.c_str());
 
     return nRet == DBRESULT_SUCCESS? true: false;
 }

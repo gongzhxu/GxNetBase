@@ -58,8 +58,8 @@ public:
 
     std::string escape(const std::string & from);
     bool escape(const std::string & from, std::string & to);
-    bool command(const char * szCmd, int nLength);
-    bool query(const char * szCmd);
+    bool command(std::string & strCmd);
+    bool query(std::string & strCmd);
     bool commit();
 private:
     MysqlConnInfo info_;
