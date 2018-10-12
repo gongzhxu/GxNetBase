@@ -58,6 +58,31 @@ bool BaseConn::read(std::vector<char> & data)
     return true;
 }
 
+bool BaseConn::read(std::vector<char> & data, size_t datlen)
+{
+    loop_->assertInLoopThread();
+    assert(bufev_ != nullptr);
+
+    struct evbuffer * inputBuffer = bufferevent_get_input(bufev_);
+    if(!inputBuffer)
+    {
+        LOG_ERROR("read errno=%d, error:%s", errno, strerror(errno));
+        close();
+        return false;
+    }
+
+    size_t  inputLen = evbuffer_get_length(inputBuffer);
+    if(inputLen < datlen)
+    {
+        //input buffer not enough
+        return false;
+    }
+
+    data.resize(datlen);
+    ASSERT_ABORT(bufferevent_read(bufev_, data.data(), datlen) == datlen);
+    return true;
+}
+
 bool BaseConn::read(void * data, size_t datlen)
 {
     loop_->assertInLoopThread();

@@ -24,6 +24,7 @@ public:
     void sendPdu(const std::shared_ptr<void> & pdu);
 
     bool read(std::vector<char> & data);
+    bool read(std::vector<char> & data, size_t datlen);
     bool read(void * data, size_t datlen);
     bool write(void * data, size_t datlen);
     bool write(void * data1, size_t datlen1, void * data2, size_t datlen2);
