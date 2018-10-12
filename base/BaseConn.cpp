@@ -33,6 +33,31 @@ void BaseConn::sendPdu(const std::shared_ptr<void> & pdu)
     loop_->runInLoop(std::bind(&BaseConn::onWrite, shared_from_this(), pdu));
 }
 
+bool BaseConn::read(std::vector<char> & data)
+{
+    loop_->assertInLoopThread();
+    assert(bufev_ != nullptr);
+
+    struct evbuffer * inputBuffer = bufferevent_get_input(bufev_);
+    if(!inputBuffer)
+    {
+        LOG_ERROR("read errno=%d, error:%s", errno, strerror(errno));
+        close();
+        return false;
+    }
+
+    size_t  inputLen = evbuffer_get_length(inputBuffer);
+    if(inputLen == 0)
+    {
+        //input buffer not enough
+        return false;
+    }
+
+    data.resize(inputLen);
+    ASSERT_ABORT(bufferevent_read(bufev_, data.data(), inputLen) == inputLen);
+    return true;
+}
+
 bool BaseConn::read(void * data, size_t datlen)
 {
     loop_->assertInLoopThread();
@@ -46,8 +71,8 @@ bool BaseConn::read(void * data, size_t datlen)
         return false;
     }
 
-    int  inputLen = evbuffer_get_length(inputBuffer);
-    if(inputLen < static_cast<int>(datlen))
+    size_t  inputLen = evbuffer_get_length(inputBuffer);
+    if(inputLen < datlen)
     {
         //input buffer not enough
         return false;
