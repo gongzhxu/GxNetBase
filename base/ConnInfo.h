@@ -45,15 +45,15 @@ class ConnInfo:public std::less_equal<ConnInfo>
 {
 public:
     ConnInfo(int fd = -1):
-        type_(0), id_(0), hostname_(""), fd_(fd), retry_(1), next_(0)
+        data_(0), type_(0), id_(0), hostname_(""), fd_(fd), retry_(1), next_(0)
     {}
 
     ConnInfo(int type, uint32_t id, std::string hostname, int fd = -1, int retry = 1):
-        type_(type), id_(id), hostname_(hostname), fd_(fd), retry_(retry), next_(0)
+       data_(0), type_(type), id_(id), hostname_(hostname), fd_(fd), retry_(retry), next_(0)
     {}
 
     ConnInfo(const ConnInfo & ci):
-       type_(ci.type_), id_(ci.id_), hostname_(ci.hostname_), fd_(ci.fd_), retry_(ci.retry_), next_(0)
+       data_(ci.data_), type_(ci.type_), id_(ci.id_), hostname_(ci.hostname_), fd_(ci.fd_), retry_(ci.retry_), next_(0)
     {
         addrinfo_.insert(addrinfo_.end(), ci.addrinfo_.begin(), ci.addrinfo_.end());
     }
@@ -62,6 +62,7 @@ public:
     {
         if(this != &ci)
         {
+            data_ = ci.data_;
             id_ = ci.id_;
             hostname_ = ci.hostname_;
             type_ = ci.type_;
@@ -73,6 +74,7 @@ public:
         return *this;
     }
 
+    void * data() const { return data_; }
     int type() const { return type_; }
     int id() const { return id_; }
     const std::string & hostname() const { return hostname_; }
@@ -81,6 +83,7 @@ public:
     const std::vector<AddrInfo> & addrinfo() const { return addrinfo_; }
     const AddrInfo & addrinfo(size_t i) const { return addrinfo_[i]; }
 
+    void setData(void * data) { data_ = data; }
     void setFd(const int fd) { fd_ = fd; }
     void addAddrInfo(const AddrInfo & info);
     void addAddrInfo(int sa_family, std::string ip, uint32_t port);
@@ -89,6 +92,7 @@ public:
     const AddrInfo & getCurrAddrInfo();
 
 private:
+    void *                  data_;
     int                      type_;
     int                      id_;
     std::string             hostname_;
