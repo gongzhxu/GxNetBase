@@ -28,6 +28,13 @@ public:
         loop_->runInLoop(std::bind(&TcpClient::addClientInLoop<T>, this, ci));
     }
 
+    template<typename T, typename D>
+    void addClient(ConnInfo & ci, D * d)
+    {
+        loop_->runInLoop(std::bind(&TcpClient::addClientInLoop<T,D>, this, ci, d));
+    }
+
+
     void delClient(ConnInfo & ci);
 
     BaseConnPtr getConn(ConnInfo & ci);
