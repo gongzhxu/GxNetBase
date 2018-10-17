@@ -48,6 +48,19 @@ private:
         }
     }
 
+    template<typename T, typename D>
+    void addClientInLoop(ConnInfo & ci, D * d)
+    {
+        if(!connMap_.hasConn(ci))
+        {
+            connMap_.addConn(ci, nullptr);
+            BaseConnPtr  pConn(new T(d));
+            pConn->setConnectCallback(std::bind(&TcpClient::onConnect, this, pConn));
+            pConn->setCloseCallback(std::bind(&TcpClient::onClose, this, pConn));
+            pConn->doConnect(ci);
+        }
+    }
+
     void delClientInLoop(ConnInfo & ci);
 
     void onConnect(const BaseConnPtr & pConn);
