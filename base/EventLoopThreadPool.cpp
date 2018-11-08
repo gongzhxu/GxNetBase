@@ -37,7 +37,7 @@ void EventLoopThreadPool::quit()
 
 EventLoop * EventLoopThreadPool::getNextLoop()
 {
-    baseLoop_->assertInLoopThread();
+    //baseLoop_->assertInLoopThread();
     EventLoop * loop = baseLoop_;
     if(!loops_.empty())
     {
@@ -55,7 +55,7 @@ EventLoop * EventLoopThreadPool::getNextLoop()
 
 EventLoop * EventLoopThreadPool::getModLoop(int sessionId)
 {
-    baseLoop_->assertInLoopThread();
+    //baseLoop_->assertInLoopThread();
     EventLoop * loop = baseLoop_;
     if(!loops_.empty())
     {
