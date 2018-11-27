@@ -9,7 +9,6 @@
 TimerObj::TimerObj(EventLoop * loop, TimerId timerId, const struct timeval & tv, const Functor && cb, int type):
     loop_(loop),
     timer_(nullptr),
-    tv_(tv),
     cb_(std::move(cb)),
     timerId_(timerId),
     type_(type)
@@ -24,6 +23,8 @@ TimerObj::TimerObj(EventLoop * loop, TimerId timerId, const struct timeval & tv,
         timer_ = event_new(loop_->get_event(), -1, EV_PERSIST, handleTimer, this);
     }
     ASSERT_ABORT(timer_);
+    tv_.tv_sec = tv.tv_sec + tv.tv_usec/1000000;
+    tv_.tv_usec = tv.tv_usec%1000000;
     evtimer_add(timer_, &tv_);
 }
 
