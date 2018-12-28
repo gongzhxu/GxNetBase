@@ -38,6 +38,16 @@ EventLoop * EventLoopThread::startLoop()
     return loop_;
 }
 
+EventLoop * EventLoopThread::getLoop()
+{
+    if(loop_ == nullptr)
+    {
+        startLoop();
+    }
+
+    return loop_;
+}
+
 void EventLoopThread::threadFunc()
 {
     EventLoop loop(loopId_);

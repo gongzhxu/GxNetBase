@@ -26,7 +26,6 @@ private:
     EventLoop * baseLoop_;
     size_t next_;
 
-    std::vector<EventLoop *> loops_;
     std::vector<EventLoopThreadPtr> threads_;
 
 };

@@ -10,11 +10,11 @@ class EventLoop;
 class EventLoopThread
 {
 public:
-    EventLoopThread(int loopId);
+    EventLoopThread(int loopId = 0);
     ~EventLoopThread();
 public:
     EventLoop * startLoop();
-
+    EventLoop * getLoop();
 private:
     void threadFunc();
 
