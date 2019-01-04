@@ -12,9 +12,24 @@ EventLoopThread::EventLoopThread(int loopId):
 
 EventLoopThread::~EventLoopThread()
 {
+    bool _isInLoopThread = false;
+
     if(loop_)
     {
+        _isInLoopThread = loop_->isInLoopThread();
         loop_->quit();
+    }
+
+    if(thread_.joinable())
+    {
+        if(_isInLoopThread)
+        {
+            thread_.detach();
+        }
+        else
+        {
+            thread_.join();
+        }
     }
 }
 
@@ -37,7 +52,7 @@ EventLoop * EventLoopThread::startLoop()
 
 void EventLoopThread::stopLoop()
 {
-    assert(!loop_ && !loop_->isInLoopThread());
+    assert(loop_ && !loop_->isInLoopThread());
 
     loop_->quit();
     loop_ = nullptr;
@@ -67,5 +82,4 @@ void EventLoopThread::threadFunc()
     }
 
     loop.loop();
-    loop_ = nullptr;
 }
