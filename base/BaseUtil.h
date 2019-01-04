@@ -5,6 +5,7 @@
 #include "FileNotify.h"
 #include "BaseConn.h"
 #include "EventLoop.h"
+#include "EventLoopThread.h"
 #include "EventLoopThreadPool.h"
 #include "SocketOps.h"
 #include "StringOps.h"
