@@ -16,9 +16,6 @@ EventLoopThread::~EventLoopThread()
     {
         loop_->quit();
     }
-
-    if(!loop_->isInLoopThread() && thread_.joinable())
-        thread_.join();
 }
 
 EventLoop * EventLoopThread::startLoop()
@@ -36,6 +33,17 @@ EventLoop * EventLoopThread::startLoop()
     }
 
     return loop_;
+}
+
+void EventLoopThread::stopLoop()
+{
+    assert(!loop_ && !loop_->isInLoopThread());
+
+    loop_->quit();
+    loop_ = nullptr;
+
+    if(thread_.joinable())
+        thread_.join();
 }
 
 EventLoop * EventLoopThread::getLoop()

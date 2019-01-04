@@ -15,6 +15,7 @@ public:
 public:
     EventLoop * startLoop();
     EventLoop * getLoop();
+    void stopLoop();
 private:
     void threadFunc();
 
