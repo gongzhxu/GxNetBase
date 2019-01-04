@@ -17,7 +17,7 @@ EventLoopThread::~EventLoopThread()
         loop_->quit();
     }
 
-    if(thread_.joinable())
+    if(!loop_->isInLoopThread() && thread_.joinable())
         thread_.join();
 }
 
