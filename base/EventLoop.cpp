@@ -52,7 +52,14 @@ void EventLoop::loop()
         event_base_loop(base_, EVLOOP_ONCE);
         doPendingFunctors();
     }
+
     LOG_INFO("loop quited %p, pendingFunctors_=%d", this, sizePendingFunctors_);
+
+    quit_ = false;
+
+    std::unique_lock<std::mutex> lock(mutex_);
+    sizePendingFunctors_ = 0;
+    pendingFunctors_.clear();
 }
 
 //not thread safe, please close eventloop in the loop thread

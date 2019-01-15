@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 
-class EventLoop;
+#include "EventLoop.h"
 
 class EventLoopThread
 {
@@ -20,12 +20,9 @@ private:
     void threadFunc();
 
 private:
-    int         loopId_;
-    EventLoop * loop_;
+    EventLoop loop_;
 
     std::thread thread_;
-    std::mutex  mutex_;
-    std::condition_variable cond_;
 };
 
 #endif
